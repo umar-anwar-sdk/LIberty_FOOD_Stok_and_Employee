@@ -1,0 +1,295 @@
+{% extends 'base.html' %}
+{% load static %}
+<!-- <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"> -->
+{% block content %}
+
+<div class="content-wrapper p-4" style="overflow: hidden;">
+
+
+    <!-- DASHBOARD CARDS -->
+    <div class="row g-3 mt-4">
+
+        <!-- Employees -->
+        <div class="col-md-3">
+            <div class="card shadow-sm border-0 text-center">
+                <div class="card-body">
+                    <h6 class="text-muted text-uppercase">Total Employees</h6>
+                    <h2 class="text-primary">{{ total_employees }}</h2>
+                    <i class="fas fa-users fa-2x text-primary"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Food Items -->
+        <div class="col-md-3">
+            <div class="card shadow-sm border-0 text-center">
+                <div class="card-body">
+                    <h6 class="text-muted text-uppercase">Food Items</h6>
+                    <h2 class="text-success">{{ total_food_items }}</h2>
+                    <i class="fas fa-hamburger fa-2x text-success"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stock -->
+        <div class="col-md-3">
+            <div class="card shadow-sm border-0 text-center">
+                <div class="card-body">
+                    <h6 class="text-muted text-uppercase">Total Stock</h6>
+                    <h2 class="text-warning">{{ total_stock }}</h2>
+                    <i class="fas fa-boxes fa-2x text-warning"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Orders -->
+        <div class="col-md-3">
+            <div class="card shadow-sm border-0 text-center">
+                <div class="card-body">
+                    <h6 class="text-muted text-uppercase">Total Orders</h6>
+                    <h2 class="text-danger">{{ total_orders }}</h2>
+                    <i class="fas fa-shopping-cart fa-2x text-danger"></i>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+
+
+
+    <div class="row g-3 mt-4">
+
+        <!-- Orders Analytics (Big Chart) -->
+        <div class="col-md-8">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h5 class="text-center">Employees Overview</h5>
+                    <canvas id="employeeJoinChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Orders Overview (Pie) -->
+        <div class="col-md-4">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h5 class="text-center">Orders Overview</h5>
+                    <canvas id="OrdersOverview"></canvas>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="row g-3 mt-4">
+
+        <!-- Food Stock -->
+        <div class="col-md-6">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h5 class="text-center">Food Stock Overview</h5>
+                    <canvas id="foodStockChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Top Selling Food -->
+        <div class="col-md-6">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h5 class="text-center">Top Selling Food</h5>
+                    <canvas id="topFoodChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+
+    <div class="card shadow-sm mt-4">
+        <div class="card-body">
+            <h5>Recent Orders</h5>
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Customer</th>
+                        <th>Items</th>
+                        <th>Total Price</th>
+                        <th>Date</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for order in recent_orders %}
+                    <tr>
+                        <td>{{ order.id }}</td>
+
+                        <!-- ✅ Customer -->
+                        <td>{{ order.customer.name }}</td>
+
+                        <!-- ✅ Items (FIXED) -->
+                        <td>
+                            {% for item in order.items.all %}
+                            {{ item.food_item.name }} (x{{ item.quantity }})<br>
+                            {% empty %}
+                            No items
+                            {% endfor %}
+                        </td>
+
+                        <!-- ✅ Total Price (FIXED) -->
+                        <td>
+                            $
+                            {% for item in order.items.all %}
+                            {{ item.food_item.price|floatformat:0|add:"0"|floatformat:0 }}
+                            {% endfor %}
+                        </td>
+
+                        <!-- ✅ Date (FIXED) -->
+                        <td>{{ order.order_date }}</td>
+
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5">No recent orders</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+
+            // BAR CHART (Food Stock)
+            new Chart(document.getElementById('foodStockChart'), {
+                type: 'bar',
+                data: {
+                    labels: {{ food_names| safe }},
+            datasets: [{
+                label: 'Quantity',
+                data: {{ food_quantities| safe }},
+            backgroundColor: 'rgba(54, 162, 235, 0.7)'
+            }]
+        },
+            options: {
+            responsive: true
+        }
+    });
+
+        // LINE CHART (Employees Joined)
+        const ctx = document.getElementById('employeeJoinChart').getContext('2d');
+        const gradient = ctx.createLinearGradient(0, 0, 0, 400);
+        gradient.addColorStop(0, 'rgba(255, 99, 132, 0.5)');
+        gradient.addColorStop(1, 'rgba(255, 99, 132, 0)');
+
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: {{ months| safe }},
+            datasets: [{
+                label: 'Employees Joined',
+                data: {{ employee_counts| safe }},
+            borderWidth: 3,
+            borderColor: 'rgba(255, 99, 132, 1)',
+            backgroundColor: gradient,
+            fill: true,
+            tension: 0.4,
+            pointBackgroundColor: 'white',
+            pointBorderColor: 'rgba(255, 99, 132, 1)',
+            pointBorderWidth: 2,
+            pointRadius: 5,
+            pointHoverRadius: 7
+            }]
+        },
+            options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'top',
+                    labels: {
+                        font: {
+                            size: 14,
+                            weight: 'bold'
+                        }
+                    }
+                },
+                tooltip: {
+                    mode: 'index',
+                    intersect: false
+                }
+            },
+            interaction: {
+                mode: 'nearest',
+                intersect: false
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    grid: {
+                        color: 'rgba(200,200,200,0.2)',
+                        drawBorder: false
+                    },
+                    ticks: {
+                        font: {
+                            size: 12
+                        }
+                    }
+                },
+                x: {
+                    grid: {
+                        display: false
+                    },
+                    ticks: {
+                        font: {
+                            size: 12
+                        }
+                    }
+                }
+            }
+        }
+    });
+
+        // PIE CHART (Orders Overview)
+        console.log("Labels:", {{ review_labels| safe }});
+        console.log("Counts:", {{ review_counts| safe }});
+        new Chart(document.getElementById('OrdersOverview'), {
+            type: 'pie',
+            data: {
+                labels: {{ review_labels| safe }},
+            datasets: [{
+                label: 'Orders Overview',
+                data: {{ review_counts| safe }},
+            backgroundColor: ['#4CAF50', '#FFC107', '#F44336'] // Completed, Pending, Cancelled
+        }]
+    },
+            options: {
+            responsive: true,
+            plugins: {
+                legend: { position: 'bottom' }
+            }
+        }
+});
+        // BAR CHART (Top Selling Food)
+        new Chart(document.getElementById('topFoodChart'), {
+            type: 'bar',
+            data: {
+                labels: {{ top_food_labels| safe }},
+            datasets: [{
+                label: 'Top Selling Food',
+                data: {{ top_food_counts| safe }},
+            backgroundColor: 'rgba(255, 159, 64, 0.7)'
+            }]
+        },
+            options: {
+            responsive: true
+        }
+    });
+
+});
+    </script>
+
+    {% endblock %}

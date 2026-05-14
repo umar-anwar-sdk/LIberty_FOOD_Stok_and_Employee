@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card shadow p-4" style="width: 100%;">
+    <h2 class="mt-5"> Add Stock</h2>
+    <br>
+    <form method="post">
+        {% csrf_token %}
+
+        <div id="stockContainer">
+            <div class="stock-group border p-3 mb-3 rounded">
+                <!-- Food Item Dropdown -->
+                <div class="mb-3">
+                    <label class="form-label"><b>Select Item:</b></label>
+                    <select name="food_item" class="form-select food-item" onchange="updatePrice(this)">
+                        {% for item in items %}
+                        <option value="{{ item.id }}" data-price="{{ item.price }}">
+                            {{ item.name }} (Current: {{ item.quantity }})
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Quantity -->
+                <div class="mb-3">
+                    <label class="form-label"><b>Quantity to Add:</b></label>
+                    <input type="number" name="quantity" class="form-control quantity" min="1" required oninput="calculateTotal(this)">
+                </div>
+
+                <!-- Unit Price -->
+                <div class="mb-3">
+                    <label class="form-label"><b>Price per Unit:</b></label>
+                    <input type="text" class="form-control unit-price" readonly>
+                </div>
+
+                <!-- Total Price -->
+                <div class="mb-3">
+                    <label class="form-label"><b>Total Price:</b></label>
+                    <input type="text" class="form-control total-price" readonly>
+                </div>
+
+                <button type="button" class="btn btn-danger btn-sm" onclick="removeStock(this)">🗑 Remove</button>
+            </div>
+        </div>
+
+        <!-- Add More Button -->
+        <button type="button" class="btn btn-primary mb-3" onclick="addStock()">➕ Add Another Item</button>
+
+        <!-- Buttons -->
+        <div class="d-flex justify-content-between">
+            <a href="{% url 'fooditem_list' %}" class="btn btn-secondary">⬅ Back</a>
+            <button type="submit" class="btn btn-success"> Add Stock</button>
+        </div>
+    </form>
+</div>
+<script>
+function updatePrice(select) {
+    const group = select.closest('.stock-group');
+    const price = select.options[select.selectedIndex].dataset.price || 0;
+
+    group.querySelector('.unit-price').value = price;
+    calculateTotal(group);
+}
+
+function calculateTotal(group) {
+    const qty = parseFloat(group.querySelector('.quantity').value) || 0;
+    const price = parseFloat(group.querySelector('.unit-price').value) || 0;
+
+    group.querySelector('.total-price').value = (qty * price).toFixed(2);
+}
+
+function addStock() {
+    const container = document.getElementById('stockContainer');
+    const first = container.querySelector('.stock-group');
+    const clone = first.cloneNode(true);
+
+    // reset values
+    clone.querySelector('.quantity').value = 1;
+    clone.querySelector('.unit-price').value = '';
+    clone.querySelector('.total-price').value = '';
+
+    // IMPORTANT: rebind events
+    const select = clone.querySelector('.food-item');
+    const qty = clone.querySelector('.quantity');
+
+    select.addEventListener('change', function () {
+        updatePrice(this);
+    });
+
+    qty.addEventListener('input', function () {
+        calculateTotal(clone);
+    });
+
+    container.appendChild(clone);
+}
+
+function removeStock(button) {
+    const container = document.getElementById('stockContainer');
+    if (container.children.length > 1) {
+        button.closest('.stock-group').remove();
+    } else {
+        alert("At least one item is required.");
+    }
+}
+
+// initialize first row on load
+document.addEventListener("DOMContentLoaded", function () {
+    const firstGroup = document.querySelector('.stock-group');
+
+    const select = firstGroup.querySelector('.food-item');
+    const qty = firstGroup.querySelector('.quantity');
+
+    select.addEventListener('change', function () {
+        updatePrice(this);
+    });
+
+    qty.addEventListener('input', function () {
+        calculateTotal(firstGroup);
+    });
+
+    // trigger default price
+    updatePrice(select);
+});
+</script>
+{% endblock %}

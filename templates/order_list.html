@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="main-panel">
+    <div class="page-header">
+      <h3 class="page-title">Orders</h3>
+      <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+          <li class="breadcrumb-item"><a href="#">Orders</a></li>
+          <li class="breadcrumb-item active" aria-current="page">Order List</li>
+        </ol>
+      </nav>
+    </div>
+
+    <div class="row">
+      <div class="col-md-12 grid-margin stretch-card">
+        <div class="card">
+          <div class="card-body">
+            <h4 class="card-title">All Orders</h4>
+            <div class="table-responsive">
+              <table id="orderTable" class="display table table-striped table-hover table-bordered align-middle w-100">
+                <thead class="table-dark">
+                  <tr>
+                    <th>Order ID</th>
+                    <th>Customer</th>
+                    <th>Order Date</th>
+                    <th>Items</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for order in orders %}
+                  <tr>
+                    <td>{{ order.id }}</td>
+                    <td>{{ order.customer.name }}</td>
+                    <td>{{ order.order_date|date:"d M Y H:i" }}</td>
+                    <td>
+                      <ul class="mb-0">
+                        {% for item in order.items.all %}
+                          <li>{{ item.food_item.name }} - {{ item.quantity }}</li>
+                        {% empty %}
+                          <li>No items</li>
+                        {% endfor %}
+                      </ul>
+                    </td>
+                    <td>
+                      <a href="{% url 'order_detail' order.id %}" class="btn btn-sm btn-info">View</a>
+                      <a href="{% url 'order_edit' order.id %}" class="btn btn-sm btn-warning">Edit</a>
+                      <form action="{% url 'order_delete' order.id %}" method="post" style="display:inline;">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-sm btn-danger"
+                                onclick="return confirm('Are you sure you want to delete this order?');">
+                          Delete
+                        </button>
+                      </form>
+                    </td>
+                  </tr>
+                  {% empty %}
+                  <tr>
+                    <td colspan="5" class="text-center text-muted">No orders found.</td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+</div>
+{% endblock %}

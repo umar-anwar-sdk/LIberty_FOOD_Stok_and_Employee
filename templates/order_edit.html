@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card shadow p-4">
+    <h2 class="mb-4">📝 Edit Order</h2>
+    <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="order_id" value="{{ order.id }}">
+        <div class="mb-3">
+            <label class="form-label"><b>Customer</b></label>
+            <select name="customer" class="form-select" required>
+                <option value="">-- Select Customer --</option>
+                {% for c in customers %}
+                    <option value="{{ c.id }}" {% if c.id == order.customer.id %}selected{% endif %}>{{ c.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label"><b>Food Item</b></label>
+            <select name="food_item" class="form-select" required>
+                <option value="">-- Select Food Item --</option>
+                {% for f in food_items %}
+                    <option value="{{ f.id }}" {% if f.id == order.food_item.id %}selected{% endif %}>{{ f.name }} (Rs. {{ f.price }})</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label"><b>Quantity</b></label>
+            <input type="number" name="quantity" value="{{ order.quantity }}" min="1" class="form-control" required>
+        </div>
+
+        <div class="d-flex justify-content-between">
+            <a href="{% url 'order_list' %}" class="btn btn-secondary">⬅ Back</a>
+            <button type="submit" class="btn btn-success">✅ Update Order</button>
+        </div>
+    </form>
+</div>
+{% endblock %}

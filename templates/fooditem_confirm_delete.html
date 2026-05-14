@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="main-panel">
+  <div class="content-wrapper">
+    <div class="page-header">
+      <h3 class="page-title">Delete Confirmation</h3>
+      <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+          <li class="breadcrumb-item"><a href="#">Food Items</a></li>
+          <li class="breadcrumb-item active" aria-current="page">Delete</li>
+        </ol>
+      </nav>
+    </div>
+
+    <div class="row">
+      <div class="col-md-6 grid-margin stretch-card">
+        <div class="card">
+          <div class="card-body text-center">
+            <h4 class="card-title text-danger">Are you sure?</h4>
+            <p class="card-description">
+              You are about to delete <strong>{{ item.name }}</strong>. <br>
+              This action cannot be undone.
+            </p>
+
+            <form method="post" class="mt-4">
+              {% csrf_token %}
+              <button type="submit" class="btn btn-danger mr-2">Yes, Delete</button>
+              <a href="{% url 'fooditem_list' %}" class="btn btn-light">Cancel</a>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

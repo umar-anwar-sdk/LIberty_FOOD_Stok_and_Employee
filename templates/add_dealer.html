@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="container-fluid d-flex justify-content-center align-items-center mt-5" style="min-height:80vh;">
+
+    <div class="card shadow-lg border-0" style="width:700px;">
+
+        <div class="card-header bg-dark text-white">
+            <h4 class="mb-0">
+                <i class="fa fa-user-plus"></i> Add New Dealer
+            </h4>
+        </div>
+
+        <div class="card-body p-4">
+
+            <form method="POST">
+                {% csrf_token %}
+
+                <!-- Dealer Name -->
+                <div class="mb-3">
+                    <label class="form-label"><b>Dealer Name</b></label>
+                    <input type="text" name="name" class="form-control"
+                        placeholder="Enter dealer name" required>
+                </div>
+
+                <!-- Phone -->
+                <div class="mb-3">
+                    <label class="form-label"><b>Phone</b></label>
+                    <input type="text" name="phone" class="form-control"
+                        placeholder="Enter dealer phone" required>
+                </div>
+
+                <!-- Address -->
+                <div class="mb-3">
+                    <label class="form-label"><b>Address</b></label>
+                    <textarea name="address" class="form-control"
+                        placeholder="Enter dealer address" rows="3"></textarea>
+                </div>
+
+                <!-- Buttons -->
+                <div class="d-flex justify-content-between mt-4">
+
+                    <a href="{% url 'dealer_list' %}" class="btn btn-secondary">
+                        ⬅ Back
+                    </a>
+
+                    <button type="submit" class="btn btn-success">
+                        💾 Save Dealer
+                    </button>
+
+                </div>
+
+            </form>
+
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}

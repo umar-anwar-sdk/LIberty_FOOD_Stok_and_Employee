@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="main-panel" style="width: 100%;">
+    <div class="page-header">
+      <h3 class="page-title">Add Employee</h3>
+      <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+          <li class="breadcrumb-item"><a href="{% url 'employee_list' %}">Employees</a></li>
+          <li class="breadcrumb-item active" aria-current="page">Add Employee</li>
+        </ol>
+      </nav>
+    </div>
+
+    <div class="row">
+      <div class="col-12 grid-margin stretch-card">
+        <div class="card">
+          <div class="card-body">
+            <h4 class="card-title">Employee Information</h4>
+            <p class="card-description">Fill in the details below</p>
+
+            <form method="post" class="forms-sample">
+              {% csrf_token %}
+              <div class="form-group">
+                <label for="first_name">First Name</label>
+                <input type="text" name="first_name" class="form-control" id="first_name" placeholder="Enter first name" required>
+              </div>
+
+              <div class="form-group">
+                <label for="last_name">Last Name</label>
+                <input type="text" name="last_name" class="form-control" id="last_name" placeholder="Enter last name" required>
+              </div>
+
+              <div class="form-group">
+                <label for="position">Position</label>
+                <input type="text" name="position" class="form-control" id="position" placeholder="Enter position" required>
+              </div>
+
+              <div class="form-group">
+                <label for="join_date">Join Date & Time</label>
+                <input type="datetime-local" name="join_date" class="form-control" id="join_date" required>
+              </div>
+
+              <div class="form-group">
+                <label for="salary">Salary</label>
+                <input type="number" step="0.01" name="salary" class="form-control" id="salary" placeholder="Enter salary" required>
+              </div>
+
+              <button type="submit" class="btn btn-primary mr-2">Save</button>
+              <a href="{% url 'employee_list' %}" class="btn btn-light">Cancel</a>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+</div>
+{% endblock %}

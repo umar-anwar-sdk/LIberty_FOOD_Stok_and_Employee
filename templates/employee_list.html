@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="main-panel" style="width: 100%;">
+  <div class="content-wrapper">
+    <div class="page-header mb-3">
+      <h3 class="page-title">Employees</h3>
+      <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+          <li class="breadcrumb-item"><a href="{% url 'home' %}">Dashboard</a></li>
+          <li class="breadcrumb-item active" aria-current="page">Employees</li>
+        </ol>
+      </nav>
+    </div>
+
+    <div class="row">
+      <div class="col-md-12 grid-margin stretch-card">
+        <div class="card">
+          <div class="card-body">
+            <h4 class="card-title" style="text-align: center; font-weight: bolder;">Employee_List</h4>
+
+            <div class="table-responsive">
+              <table class="table table-bordered">
+                <thead class="thead-light">
+                  <tr>
+                    <th>Name</th>
+                    <th>Post</th>
+                    <th>Salary</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for e in employees %}
+                  <tr>
+                    <td>{{ e.first_name }} {{ e.last_name }}</td>
+                    <td>{{ e.position }}</td>
+                    <td>{{ e.base_salary }}</td>
+                    <td>
+                      <a href="{% url 'employee_detail' e.id %}" class="btn btn-sm btn-info">View</a>
+                    </td>
+                  </tr>
+                  {% empty %}
+                  <tr>
+                    <td colspan="4" class="text-center">No employees found.</td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+            <a href="{% url 'employee_add' %}" class="btn btn-primary mt-3">Add Employee</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

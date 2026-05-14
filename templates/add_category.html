@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="container-fluid h-100 d-flex align-items-center justify-content-center">
+
+    <div class="card shadow-lg border-0" style="width:600px;">
+
+        <div class="card-header bg-dark text-white">
+            <h4 class="mb-0">
+                <i class="fa fa-list"></i> Add New Category
+            </h4>
+        </div>
+
+        <div class="card-body p-4">
+
+            <form method="POST" enctype="multipart/form-data">
+                {% csrf_token %}
+
+                <!-- Category Name -->
+                <div class="mb-3">
+                    <label class="form-label"><b>Category Name</b></label>
+                    <input type="text" name="name" class="form-control"
+                        placeholder="Enter category name" required>
+                </div>
+
+                <!-- Category Image -->
+                <div class="mb-3">
+                    <label class="form-label"><b>Category Image</b></label>
+                    <input type="file" name="image" class="form-control"
+                        onchange="previewImage(event)">
+                </div>
+
+                <!-- Image Preview -->
+                <div class="mb-3 text-center">
+                    <img id="preview" width="120" style="display:none; border-radius:8px;">
+                </div>
+
+                <!-- Status -->
+                <div class="mb-3">
+                    <label class="form-label"><b>Status</b></label>
+                    <select name="status" class="form-control">
+                        <option value="1">Active</option>
+                        <option value="0">Inactive</option>
+                    </select>
+                </div>
+
+                <!-- Buttons -->
+                <div class="d-flex justify-content-between mt-3">
+                    <a href="{% url 'category_list' %}" class="btn btn-secondary">
+                        ⬅ Back
+                    </a>
+
+                    <button type="submit" class="btn btn-success">
+                        ✅ Add Category
+                    </button>
+                </div>
+
+            </form>
+
+        </div>
+    </div>
+
+</div>
+
+<script>
+function previewImage(event){
+    var reader = new FileReader();
+    reader.onload = function(){
+        var img = document.getElementById('preview');
+        img.src = reader.result;
+        img.style.display = "block";
+    }
+    reader.readAsDataURL(event.target.files[0]);
+}
+</script>
+
+{% endblock %}

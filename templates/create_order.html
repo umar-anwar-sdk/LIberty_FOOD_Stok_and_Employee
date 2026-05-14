@@ -1,0 +1,175 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="container mt-5">
+
+    <div class="card shadow-lg border-0 p-4">
+
+        <h3 class="mb-4 text-primary">🛒 Create New Order</h3>
+
+        <form method="post" id="orderForm">
+            {% csrf_token %}
+
+            <div class="mb-4">
+                <label class="form-label fw-bold">Customer</label>
+
+                <select name="customer" class="form-select" required>
+                    <option value="">-- Select Customer --</option>
+
+                    {% for c in customers %}
+
+                    <option value="{{ c.id }}">{{ c.name }}</option>
+                    {% endfor %}
+
+                </select>
+            </div>
+
+            <hr>
+
+            <div id="productContainer">
+
+                <div class="product-group card border p-3 mb-3 shadow-sm">
+
+                    <h6 class="text-muted mb-3">Food Item</h6>
+
+                    <select name="food_item" class="form-select food-item mb-3" onchange="updatePrice(this)" required>
+
+                        <option value="">-- Select Food Item --</option>
+
+                        {% for f in food_items %}
+
+                        <option value="{{ f.id }}" data-price="{{ f.price }}" data-stock="{{ f.quantity }}">
+
+                            {{ f.name }} (Available: {{ f.quantity }})
+
+                        </option>
+                        {% endfor %}
+
+                    </select>
+
+                    <div class="row">
+
+                        <div class="col-md-4 mb-3">
+                            <label class="fw-bold">Quantity</label>
+                            <input type="number" name="quantity" class="form-control quantity" min="1" value="1"
+                                oninput="calculateTotal(this)" required>
+                        </div>
+
+                        <div class="col-md-4 mb-3">
+                            <label class="fw-bold">Price / Unit</label>
+                            <input type="text" class="form-control unit-price bg-light" readonly>
+                        </div>
+
+                        <div class="col-md-4 mb-3">
+                            <label class="fw-bold">Total</label>
+                            <input type="text" class="form-control total-price bg-light fw-bold text-success" readonly>
+                        </div>
+
+                    </div>
+
+                    <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeProduct(this)">
+
+                        🗑 Remove
+
+                    </button>
+
+                </div>
+
+            </div>
+
+            <button type="button" class="btn btn-primary mt-2" onclick="addProduct()">
+
+                ➕ Add Another Product
+
+            </button>
+
+            <hr>
+
+            <div class="d-flex justify-content-between mt-4">
+
+                <a href="{% url 'order_list' %}" class="btn btn-outline-secondary">
+
+                    ⬅ Back
+
+                </a>
+
+                <button type="submit" class="btn btn-success">
+
+                    ✅ Create Order
+
+                </button>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
+<script>
+
+    function updatePrice(select) {
+
+        const group = select.closest('.product-group');
+
+        const price = select.options[select.selectedIndex]
+            ?.getAttribute('data-price') || '';
+
+        group.querySelector('.unit-price').value = price;
+
+        calculateTotal(select);
+
+    }
+
+    function calculateTotal(element) {
+
+        const group = element.closest('.product-group');
+
+        const qty = parseFloat(group.querySelector('.quantity').value) || 0;
+
+        const price = parseFloat(group.querySelector('.unit-price').value) || 0;
+
+        group.querySelector('.total-price').value = (qty * price).toFixed(2);
+
+    }
+
+    function addProduct() {
+
+        const container = document.getElementById('productContainer');
+
+        const newGroup = container.children[0].cloneNode(true);
+
+        newGroup.querySelector('.food-item').selectedIndex = 0;
+
+        newGroup.querySelector('.quantity').value = 1;
+
+        newGroup.querySelector('.unit-price').value = '';
+
+        newGroup.querySelector('.total-price').value = '';
+
+        container.appendChild(newGroup);
+
+    }
+
+    function removeProduct(button) {
+
+        const container = document.getElementById('productContainer');
+
+        if (container.children.length > 1) {
+
+            button.closest('.product-group').remove();
+
+        }
+
+        else {
+
+            alert("At least one product is required.");
+
+        }
+
+    }
+
+</script>
+
+{% endblock %}

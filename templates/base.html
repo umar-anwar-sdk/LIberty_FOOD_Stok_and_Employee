@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+{% load static %}
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+  <title>Breeze Admin</title>
+
+  <link rel="stylesheet" href="{% static 'assets/vendors/mdi/css/materialdesignicons.min.css' %}" />
+  <link rel="stylesheet" href="{% static 'assets/vendors/flag-icon-css/css/flag-icon.min.css' %}" />
+  <link rel="stylesheet" href="{% static 'assets/vendors/css/vendor.bundle.base.css' %}" />
+  <link rel="stylesheet" href="{% static 'assets/vendors/font-awesome/css/font-awesome.min.css' %}" />
+  <link rel="stylesheet" href="{% static 'assets/vendors/bootstrap-datepicker/bootstrap-datepicker.min.css' %}" />
+  <link rel="stylesheet" href="{% static 'assets/css/style.css' %}" />
+  <link rel="shortcut icon" href="{% static 'liberty.png' %}" />
+</head>
+
+<body>
+
+  <div class="container-scroller">
+
+    <!-- SIDEBAR -->
+    <nav class="sidebar sidebar-offcanvas" id="sidebar"
+      style="padding:10px; position:fixed; height:100vh; overflow:hidden;">
+
+      <div class="text-center sidebar-brand-wrapper d-flex align-items-center">
+        <a class="sidebar-brand brand-logo" href="#">
+          <img src="{% static 'liberty.png' %}" alt="logo" />
+        </a>
+      </div>
+
+      <ul class="nav">
+
+        <!-- PROFILE -->
+        <li class="nav-item nav-profile">
+          <a href="#" class="nav-link">
+            <div class="nav-profile-text d-flex flex-column pr-3">
+              <span class="font-weight-medium mb-2">
+                {{ request.user.username }}
+              </span>
+              <small>{{ request.user.role }}</small>
+            </div>
+          </a>
+        </li>
+
+        <!-- COMMON DASHBOARD -->
+        <li class="nav-item">
+          <a class="nav-link" href="{% url 'home' %}">
+            <span class="menu-title">Dashboard</span>
+          </a>
+        </li>
+
+        <!-- ================= EMPLOYEE MENU ================= -->
+        {% if user.role == "employee" %}
+
+        <li class="nav-item">
+          <a class="nav-link" href="{% url 'customer_list' %}">
+            <span class="menu-title">Customers</span>
+          </a>
+        </li>
+
+        <li class="nav-item">
+          <a class="nav-link" href="{% url 'fooditem_list' %}">
+            <span class="menu-title">Inventory</span>
+          </a>
+        </li>
+
+        <li class="nav-item">
+          <a class="nav-link" href="{% url 'employee_list' %}">
+            <span class="menu-title">Employees</span>
+          </a>
+        </li>
+
+        <li class="nav-item">
+          <a class="nav-link" href="{% url 'order_add' %}">
+            <span class="menu-title">Add Order</span>
+          </a>
+        </li>
+
+        <li class="nav-item">
+          <a class="nav-link" href="{% url 'food_quantity' %}">
+            <span class="menu-title">Add Food Quantity</span>
+          </a>
+        </li>
+
+        <!-- ================= CUSTOMER MENU ================= -->
+        {% elif user.role == "customer" %}
+
+        <li class="nav-item">
+          <a class="nav-link" href="{% url 'fooditem_list' %}">
+            <span class="menu-title">Food Menu</span>
+          </a>
+        </li>
+
+        <li class="nav-item">
+          <a class="nav-link" href="{% url 'order_list' %}">
+            <span class="menu-title">My Orders</span>
+          </a>
+        </li>
+
+        {% endif %}
+
+        <!-- LOGOUT -->
+        <li class="nav-item">
+          <a class="nav-link" href="{% url 'logout' %}">
+            <span class="menu-title">Logout</span>
+          </a>
+        </li>
+
+      </ul>
+    </nav>
+
+    <!-- PAGE BODY -->
+    <div class="container-fluid page-body-wrapper">
+
+      <!-- TOP NAVBAR -->
+      <nav class="navbar col-lg-12 col-12 p-lg-0 fixed-top d-flex flex-row">
+
+        <div class="navbar-menu-wrapper d-flex align-items-center justify-content-between">
+
+          <span>
+            Welcome, {{ request.user.username }}
+          </span>
+
+        </div>
+
+      </nav>
+
+      <!-- MAIN CONTENT -->
+      {% block content %}{% endblock %}
+
+    </div>
+
+  </div>
+
+  <!-- SCRIPTS -->
+  <script src="{% static 'assets/vendors/js/vendor.bundle.base.js' %}"></script>
+  <script src="{% static 'assets/js/off-canvas.js' %}"></script>
+  <script src="{% static 'assets/js/misc.js' %}"></script>
+
+</body>
+
+</html>

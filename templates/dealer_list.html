@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="container mt-5">
+
+    <div class="card shadow">
+        <div class="card-header bg-dark text-white">
+            <h4 class="mb-0">Dealer List</h4>
+        </div>
+
+        <div class="card-body">
+
+            <a href="{% url 'add_dealer' %}" class="btn btn-success mb-3"> Add New Dealer</a>
+
+            <table class="table table-striped table-hover">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Phone</th>
+                        <th>Address</th>
+                        <th>Actions</th> 
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for dealer in dealers %}
+                    <tr>
+                        <td>{{ dealer.name }}</td>
+                        <td>{{ dealer.phone }}</td>
+                        <td>{{ dealer.address }}</td>
+                        <td>
+            <a href="{% url 'delete_dealer' dealer.id %}" 
+               class="btn btn-danger btn-sm"
+               onclick="return confirm('Are you sure you want to delete this dealer?');">
+               Delete
+            </a>
+        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="3" class="text-center">No dealers found.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
+        </div>
+    </div>
+
+</div>
+
+{% endblock %}

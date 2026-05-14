@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+{% load static %}
+<html>
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" type="image/png" sizes="120px" href="{% static 'liberty.png' %}" />
+    <link rel="stylesheet" href="{% static 'assets/login.css' %}" />
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+      integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC"
+      crossorigin="anonymous"
+    />
+    <title>Liberty Foods - Signup</title>
+</head>
+<body>
+  <div class="wrapper">
+    <div class="container main signup">
+      <div class="row">
+        <div class="col-md-6 side-image">
+          <!-- Image -->
+          <img src="{% static 'liberty.png' %}" alt="Logo" />
+        </div>
+
+        <div class="col-md-6 right">
+          <div class="input-box">
+            <header class="fs-1 text-black mb-0 fw-bold">Create account</header>
+
+            <!-- Display messages -->
+            {% if messages %}
+              <div class="mb-3">
+                {% for message in messages %}
+                  <div
+                    class="alert {% if message.tags %}alert-{{ message.tags }}{% else %}alert-info{% endif %} alert-dismissible fade show"
+                    role="alert"
+                  >
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                  </div>
+                {% endfor %} 
+              </div>
+            {% endif %}
+
+            <!-- Signup Form -->
+            <form method="POST" novalidate class="pb-0">
+              {% csrf_token %}
+              
+              <div class="input-field" >
+                <input type="text" name="first_name" class="input"style="color: black;" id="first_name" required />
+                <label for="first_name">First Name</label>
+              </div>
+
+              <div class="input-field">
+                <input type="text" name="last_name" class="input" style="color: black;" id="last_name" required />
+                <label for="last_name">Last Name</label>
+              </div>
+
+              <div class="input-field">
+                <input type="email" name="email" class="input" id="email" required />
+                <label for="email">Email</label>
+              </div>
+
+              <div class="input-field">
+                <input type="password" name="password" class="input" id="pass1" required />
+                <label for="pass1">Password</label>
+              </div>
+
+              <div class="input-field">
+                <input type="password" name="confirm_password" class="input" id="pass2" required />
+                <label for="pass2">Confirm Password</label>
+              </div>
+
+              <div class="input-field">
+                <button type="submit" class="submit">Sign Up</button>
+              </div>
+            </form>
+
+            <div class="signin text-black">
+              <span>Already have an account? <a href="{% url 'login' %}">Log in here</a></span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script
+    src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"
+    integrity="sha384-MrcW6ZMFY/zO6v+SA3mWZ1zZP7E/U6FdGIXb12goCkDZvK3E8h5H5kD6yV94Q6Ok"
+    crossorigin="anonymous"
+  ></script>
+</body>
+</html>
