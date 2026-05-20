@@ -1,11 +1,32 @@
 {% extends "base.html" %}
 {% block content %}
 
-<div class="container mt-5">
+<!-- Premium Header -->
+<div class="card border-0 shadow-lg rounded-4 overflow-hidden">
+
+    <div class="p-4 text-white"
+        style="background: linear-gradient(135deg, #1e3c72, #2a5298); margin-top: 70px;">
+
+        <div class="d-flex justify-content-between align-items-center flex-wrap">
+
+            <div>
+                <h2 class="fw-bold mb-1">
+                    🛒 Create New Order
+                </h2>
+
+                <p class="mb-0 opacity-75">
+                    Add customer and select multiple food items
+                </p>
+            </div>
+
+        </div>
+
+    </div>
+</div>
+
+<div class="container mt-3">
 
     <div class="card shadow-lg border-0 p-4">
-
-        <h3 class="mb-4 text-primary">🛒 Create New Order</h3>
 
         <form method="post" id="orderForm">
             {% csrf_token %}
@@ -17,7 +38,6 @@
                     <option value="">-- Select Customer --</option>
 
                     {% for c in customers %}
-
                     <option value="{{ c.id }}">{{ c.name }}</option>
                     {% endfor %}
 
@@ -32,7 +52,8 @@
 
                     <h6 class="text-muted mb-3">Food Item</h6>
 
-                    <select name="food_item" class="form-select food-item mb-3" onchange="updatePrice(this)" required>
+                    <select name="food_item" class="form-select food-item mb-3"
+                        onchange="updatePrice(this)" required>
 
                         <option value="">-- Select Food Item --</option>
 
@@ -51,8 +72,8 @@
 
                         <div class="col-md-4 mb-3">
                             <label class="fw-bold">Quantity</label>
-                            <input type="number" name="quantity" class="form-control quantity" min="1" value="1"
-                                oninput="calculateTotal(this)" required>
+                            <input type="number" name="quantity" class="form-control quantity"
+                                min="1" value="1" oninput="calculateTotal(this)" required>
                         </div>
 
                         <div class="col-md-4 mb-3">
@@ -67,7 +88,8 @@
 
                     </div>
 
-                    <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeProduct(this)">
+                    <button type="button" class="btn btn-outline-danger btn-sm"
+                        onclick="removeProduct(this)">
 
                         🗑 Remove
 
@@ -141,11 +163,8 @@
         const newGroup = container.children[0].cloneNode(true);
 
         newGroup.querySelector('.food-item').selectedIndex = 0;
-
         newGroup.querySelector('.quantity').value = 1;
-
         newGroup.querySelector('.unit-price').value = '';
-
         newGroup.querySelector('.total-price').value = '';
 
         container.appendChild(newGroup);
@@ -157,15 +176,9 @@
         const container = document.getElementById('productContainer');
 
         if (container.children.length > 1) {
-
             button.closest('.product-group').remove();
-
-        }
-
-        else {
-
+        } else {
             alert("At least one product is required.");
-
         }
 
     }

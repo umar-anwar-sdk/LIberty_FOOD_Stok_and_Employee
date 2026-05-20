@@ -1,57 +1,134 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="card shadow p-4" style="width: 100%;">
-    <h2 class="mt-5"> Add Stock</h2>
-    <br>
-    <form method="post">
-        {% csrf_token %}
 
-        <div id="stockContainer">
-            <div class="stock-group border p-3 mb-3 rounded">
-                <!-- Food Item Dropdown -->
-                <div class="mb-3">
-                    <label class="form-label"><b>Select Item:</b></label>
-                    <select name="food_item" class="form-select food-item" onchange="updatePrice(this)">
-                        {% for item in items %}
-                        <option value="{{ item.id }}" data-price="{{ item.price }}">
-                            {{ item.name }} (Current: {{ item.quantity }})
-                        </option>
-                        {% endfor %}
-                    </select>
-                </div>
+<div class="card border-0 shadow-lg rounded-4 overflow-hidden">
 
-                <!-- Quantity -->
-                <div class="mb-3">
-                    <label class="form-label"><b>Quantity to Add:</b></label>
-                    <input type="number" name="quantity" class="form-control quantity" min="1" required oninput="calculateTotal(this)">
-                </div>
+    <!-- Header -->
+    <div class="p-4 text-white"
+        style="background: linear-gradient(135deg, #1e3c72, #2a5298); margin-top: 70px;">
 
-                <!-- Unit Price -->
-                <div class="mb-3">
-                    <label class="form-label"><b>Price per Unit:</b></label>
-                    <input type="text" class="form-control unit-price" readonly>
-                </div>
-
-                <!-- Total Price -->
-                <div class="mb-3">
-                    <label class="form-label"><b>Total Price:</b></label>
-                    <input type="text" class="form-control total-price" readonly>
-                </div>
-
-                <button type="button" class="btn btn-danger btn-sm" onclick="removeStock(this)">🗑 Remove</button>
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h2 class="fw-bold mb-1">📦 Add Stock</h2>
+                <p class="mb-0 opacity-75">
+                    Manage inventory and update stock quantities
+                </p>
             </div>
-        </div>
 
-        <!-- Add More Button -->
-        <button type="button" class="btn btn-primary mb-3" onclick="addStock()">➕ Add Another Item</button>
 
-        <!-- Buttons -->
-        <div class="d-flex justify-content-between">
-            <a href="{% url 'fooditem_list' %}" class="btn btn-secondary">⬅ Back</a>
-            <button type="submit" class="btn btn-success"> Add Stock</button>
         </div>
-    </form>
+    </div>
+
+    <!-- Body -->
+    <div class="card-body p-4 bg-light">
+
+        <form method="post">
+            {% csrf_token %}
+
+            <div id="stockContainer">
+
+                <div class="stock-group bg-white border-0 shadow-sm rounded-4 p-4 mb-4">
+
+                    <!-- Item -->
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold text-dark">
+                            Select Item
+                        </label>
+
+                        <select name="food_item"
+                            class="form-select rounded-3 food-item"
+                            onchange="updatePrice(this)">
+
+                            {% for item in items %}
+                            <option value="{{ item.id }}"
+                                data-price="{{ item.price }}">
+
+                                {{ item.name }} (Current: {{ item.quantity }})
+
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <!-- Quantity -->
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold text-dark">
+                            Quantity to Add
+                        </label>
+
+                        <input type="number"
+                            name="quantity"
+                            class="form-control rounded-3 quantity"
+                            min="1"
+                            required
+                            oninput="calculateTotal(this)">
+                    </div>
+
+                    <!-- Price -->
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold text-dark">
+                            Price per Unit
+                        </label>
+
+                        <input type="text"
+                            class="form-control rounded-3 bg-light unit-price"
+                            readonly>
+                    </div>
+
+                    <!-- Total -->
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold text-dark">
+                            Total Price
+                        </label>
+
+                        <input type="text"
+                            class="form-control rounded-3 bg-light total-price"
+                            readonly>
+                    </div>
+
+                    <!-- Remove -->
+                    <button type="button"
+                        class="btn btn-outline-danger rounded-pill px-4"
+                        onclick="removeStock(this)">
+
+                        🗑 Remove
+                    </button>
+
+                </div>
+
+            </div>
+
+            <!-- Add More -->
+            <button type="button"
+                class="btn text-white rounded-pill px-4 py-2 mb-4 shadow-sm"
+                style="background: linear-gradient(135deg, #1e3c72, #2a5298);"
+                onclick="addStock()">
+
+                ➕ Add Another Item
+            </button>
+
+            <!-- Bottom Buttons -->
+            <div class="d-flex justify-content-between">
+
+                <a href="{% url 'fooditem_list' %}"
+                    class="btn btn-secondary rounded-pill px-4">
+
+                    ⬅ Back
+                </a>
+
+                <button type="submit"
+                    class="btn btn-success rounded-pill px-5 shadow-sm">
+
+                    ✅ Add Stock
+                </button>
+
+            </div>
+
+        </form>
+
+    </div>
 </div>
+
 <script>
 function updatePrice(select) {
     const group = select.closest('.stock-group');
@@ -73,12 +150,10 @@ function addStock() {
     const first = container.querySelector('.stock-group');
     const clone = first.cloneNode(true);
 
-    // reset values
-    clone.querySelector('.quantity').value = 1;
+    clone.querySelector('.quantity').value = '';
     clone.querySelector('.unit-price').value = '';
     clone.querySelector('.total-price').value = '';
 
-    // IMPORTANT: rebind events
     const select = clone.querySelector('.food-item');
     const qty = clone.querySelector('.quantity');
 
@@ -95,6 +170,7 @@ function addStock() {
 
 function removeStock(button) {
     const container = document.getElementById('stockContainer');
+
     if (container.children.length > 1) {
         button.closest('.stock-group').remove();
     } else {
@@ -102,8 +178,8 @@ function removeStock(button) {
     }
 }
 
-// initialize first row on load
 document.addEventListener("DOMContentLoaded", function () {
+
     const firstGroup = document.querySelector('.stock-group');
 
     const select = firstGroup.querySelector('.food-item');
@@ -117,8 +193,8 @@ document.addEventListener("DOMContentLoaded", function () {
         calculateTotal(firstGroup);
     });
 
-    // trigger default price
     updatePrice(select);
 });
 </script>
+
 {% endblock %}

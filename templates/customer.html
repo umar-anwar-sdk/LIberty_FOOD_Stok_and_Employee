@@ -1,0 +1,102 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Customer Dashboard</title>
+
+    <link rel="stylesheet" href="{% static 'assets/vendors/mdi/css/materialdesignicons.min.css' %}" />
+    <link rel="stylesheet" href="{% static 'assets/vendors/flag-icon-css/css/flag-icon.min.css' %}" />
+    <link rel="stylesheet" href="{% static 'assets/vendors/css/vendor.bundle.base.css' %}" />
+    <link rel="stylesheet" href="{% static 'assets/vendors/font-awesome/css/font-awesome.min.css' %}" />
+    <link rel="stylesheet" href="{% static 'assets/vendors/bootstrap-datepicker/bootstrap-datepicker.min.css' %}" />
+    <link rel="stylesheet" href="{% static 'assets/css/style.css' %}" />
+    <link rel="shortcut icon" href="{% static 'liberty.png' %}" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css">
+</head>
+
+<body>
+    <!-- 
+<h1>Welcome Customer - {{ request.user.username }}</h1>
+
+<hr>
+
+<h2>Your Orders</h2>
+
+<table border="1">
+    <tr>
+        <th>Order ID</th>
+        <th>Status</th>
+        <th>Total Items</th>
+    </tr>
+
+    {% for order in customer_orders %}
+    <tr>
+        <td>{{ order.id }}</td>
+        <td>{{ order.status }}</td>
+        <td>{{ order.items.count }}</td>
+    </tr>
+    {% endfor %}
+</table> -->
+
+
+
+    <div class="container-scroller">
+
+        <!-- SIDEBAR -->
+        <nav class="sidebar sidebar-offcanvas" id="sidebar"
+            style="padding:10px; position:fixed; height:100vh; overflow:hidden;">
+
+            <div class="text-center sidebar-brand-wrapper d-flex align-items-center">
+                <a class="sidebar-brand brand-logo" href="#">
+                    <img src="{% static 'liberty.png' %}" alt="logo" />
+                </a>
+            </div>
+
+            <div class="nav-profile-text  flex-column pr-3 mt-3">
+                <img class="mb-1 ml-3" style="height: 35px; border-radius: 20px;"
+                    src="{% static 'assets/images/faces/face1.jpg' %}" alt="">
+                <span class="font-weight-medium ml-2">Libery Food</span>
+                <span class="badge badge-danger text-white ml-2 mb-2 rounded">3</span>
+            </div>
+            </a>
+            </li>
+            <li class="nav-item mt-4">
+                <a class="nav-link" href="{% url 'home' %}">
+                    <i class="mdi mdi-home menu-icon"></i>
+                    <span class="menu-title">Dashboard</span>
+                </a>
+            </li>
+
+
+            <li class="nav-item mt-4">
+                <a class="nav-link" href="{% url 'order_add' %}">
+                    <i class="mdi mdi-cart-plus menu-icon"></i>
+                    <span class="menu-title">Add Order</span>
+                </a>
+
+
+
+            <li class="nav-item sidebar-actions">
+                <div class="nav-link">
+                    <div class="mt-4">
+                        <div class="border-none d-flex" style="gap: 3px;">
+                            <i class="fa-solid fa-bell"></i>
+                            <p class="text-black" style="line-height: 1">Notification</p>
+                        </div>
+                        <ul class=" mt-3 pl-0" style="gap: 3px;">
+                            <li>
+                            <i class="fa-solid fa-right-from-bracket" ></i>
+                            <a href="{% url 'logout' %}">Sign Out</a>
+                            </li>
+                        </ul>
+                    </div>
+
+                </div>
+            </li>
+            </ul>
+        </nav>
+    </div>
+</body>
+
+</html>

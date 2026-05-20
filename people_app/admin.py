@@ -1,3 +1,14 @@
 from django.contrib import admin
+from .models import (
+    Customer,
+    Employee,
+    EmployeeDailyCash,
+    EmployeeSalary,
+    EmployeeTransaction,
+)
 
-# Register your models here.
+admin.site.register(Customer)
+admin.site.register(Employee)
+admin.site.register(EmployeeDailyCash)
+admin.site.register(EmployeeSalary)
+admin.site.register(EmployeeTransaction)

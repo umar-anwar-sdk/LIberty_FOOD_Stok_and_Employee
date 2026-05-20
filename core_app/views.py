@@ -9,140 +9,180 @@ from .models import Category, Dealer, FoodItem, Order, OrderItem
 from people_app.models import Customer, Employee
 from django.db.models.functions import ExtractMonth
 from django.contrib.auth.decorators import login_required
+from django.db.models import Q
 
-
-
+from accounts.decoraters import (
+    manager_required,
+    employee_required,
+)
 
 # ---------------- HOME ---------------- #
 
 @login_required
 def home(request):
 
-    # ---------------- STATS ---------------- #
-    total_employees = Employee.objects.count()
-    total_food_items = FoodItem.objects.count()
-    total_stock = FoodItem.objects.aggregate(total=Sum("quantity"))["total"] or 0
-    total_orders = Order.objects.count()
+    # ---------------- ADMIN & MANAGER ---------------- #
 
-    # ---------------- FOOD STOCK CHART ---------------- #
-    food_names = list(FoodItem.objects.values_list("name", flat=True))
-    food_quantities = list(FoodItem.objects.values_list("quantity", flat=True))
+    if request.user.role in ['admin', 'manager']:
 
-    # ---------------- ORDERS STATUS ---------------- #
-    review_labels = ["Completed", "Pending", "Cancelled"]
-    review_counts = [
-        Order.objects.filter(status="Completed").count(),
-        Order.objects.filter(status="Pending").count(),
-        Order.objects.filter(status="Cancelled").count(),
-    ]
+        total_employees = Employee.objects.count()
+        total_food_items = FoodItem.objects.count()
 
-    # ---------------- RECENT ORDERS ---------------- #
-    recent_orders = Order.objects.select_related("customer").prefetch_related("items__food_item").order_by("-id")[:5]
+        total_stock = (
+            FoodItem.objects.aggregate(total=Sum("quantity"))["total"] or 0
+        )
 
-    # ---------------- TOP SELLING FOOD ---------------- #
-    top_food = (
-        OrderItem.objects
-        .values("food_item__name")
-        .annotate(total=Sum("quantity"))
-        .order_by("-total")[:5]
-    )
+        total_orders = Order.objects.count()
 
-    top_food_labels = [item["food_item__name"] for item in top_food]
-    top_food_counts = [item["total"] for item in top_food]
+        food_names = list(FoodItem.objects.values_list("name", flat=True))
+        food_quantities = list(FoodItem.objects.values_list("quantity", flat=True))
 
-    # ---------------- EMPLOYEE CHART ---------------- #
-    employee_data = (
-        Employee.objects
-        .annotate(month=ExtractMonth("join_date"))
-        .values("month")
-        .annotate(count=Count("id"))
-        .order_by("month")
-    )
+        review_labels = ["Completed", "Pending", "Cancelled"]
 
-    months = []
-    employee_counts = []
+        review_counts = [
+            Order.objects.filter(status="Completed").count(),
+            Order.objects.filter(status="Pending").count(),
+            Order.objects.filter(status="Cancelled").count(),
+        ]
 
-    for item in employee_data:
-        if item["month"]:
-            months.append(calendar.month_name[item["month"]])
-            employee_counts.append(item["count"])
+        recent_orders = (
+            Order.objects.select_related("customer")
+            .prefetch_related("items__food_item")
+            .order_by("-id")[:5]
+        )
 
-    # ---------------- CONTEXT ---------------- #
-    return render(request, "home.html", {
-        "total_employees": total_employees,
-        "total_food_items": total_food_items,
-        "total_stock": total_stock,
-        "total_orders": total_orders,
+        top_food = (
+            OrderItem.objects.values("food_item__name")
+            .annotate(total=Sum("quantity"))
+            .order_by("-total")[:5]
+        )
 
-        "food_names": json.dumps(food_names),
-        "food_quantities": json.dumps(food_quantities),
+        top_food_labels = [item["food_item__name"] for item in top_food]
+        top_food_counts = [item["total"] for item in top_food]
 
-        "review_labels": json.dumps(review_labels),
-        "review_counts": json.dumps(review_counts),
+        employee_data = (
+            Employee.objects.annotate(month=ExtractMonth("join_date"))
+            .values("month")
+            .annotate(count=Count("id"))
+            .order_by("month")
+        )
 
-        "recent_orders": recent_orders,
+        months = []
+        employee_counts = []
 
-        "top_food_labels": json.dumps(top_food_labels),
-        "top_food_counts": json.dumps(top_food_counts),
+        for item in employee_data:
+            if item["month"]:
+                months.append(calendar.month_name[item["month"]])
+                employee_counts.append(item["count"])
 
-        "months": json.dumps(months),
-        "employee_counts": json.dumps(employee_counts),
-    })
+        return render(request, "home.html", {
+            "total_employees": total_employees,
+            "total_food_items": total_food_items,
+            "total_stock": total_stock,
+            "total_orders": total_orders,
+            "food_names": json.dumps(food_names),
+            "food_quantities": json.dumps(food_quantities),
+            "review_labels": json.dumps(review_labels),
+            "review_counts": json.dumps(review_counts),
+            "recent_orders": recent_orders,
+            "top_food_labels": json.dumps(top_food_labels),
+            "top_food_counts": json.dumps(top_food_counts),
+            "months": json.dumps(months),
+            "employee_counts": json.dumps(employee_counts),
+        })
 
-# def dashboard_view(request):
-#     completed_count = Order.objects.filter(status='Completed').count()
-#     pending_count = Order.objects.filter(status='Pending').count()
-#     cancelled_count = Order.objects.filter(status='Cancelled').count()
+    # ---------------- EMPLOYEE ---------------- #
 
-#     return render(request, 'dashboard.html', {
-#         'review_labels': ["Completed", "Pending", "Cancelled"],
-#         'review_counts': [completed_count, pending_count, cancelled_count],
-#     })
+    elif request.user.role == 'employee':
+
+        recent_orders = Order.objects.order_by("-id")[:5]
+
+        return render(
+            request,
+            "employee.html",
+            {
+                "recent_orders": recent_orders
+            }
+        )
+
+    # ---------------- CUSTOMER ---------------- #
+
+    elif request.user.role == 'customer':
+
+        customer_orders = Order.objects.filter(
+            customer__user=request.user
+        ).order_by("-id")
+
+        return render(
+            request,
+            "customer.html",
+            {
+                "customer_orders": customer_orders
+            }
+        )
+
+    return redirect('login')
 
 
 # ---------------- CATEGORY ---------------- #
 
+@manager_required
 def category_list(request):
+
     return render(request, "category_list.html", {
         "categories": Category.objects.all()
     })
 
 
+@manager_required
 def add_category(request):
+
     if request.method == "POST":
+
         Category.objects.create(
             name=request.POST.get("name"),
             image=request.FILES.get("image"),
             status=request.POST.get("status")
         )
+
         return redirect('category_list')
 
     return render(request, "add_category.html")
 
 
+@manager_required
 def category_edit(request, pk):
+
     category = get_object_or_404(Category, pk=pk)
+
     if request.method == "POST":
         category.name = request.POST.get("name")
         category.save()
         return redirect("category_list")
+
     return render(request, "category_edit.html", {"category": category})
 
 
+@manager_required
 def category_delete(request, pk):
+
     get_object_or_404(Category, pk=pk).delete()
     return redirect('category_list')
 
 
 # ---------------- DEALER ---------------- #
 
+@manager_required
 def dealer_list(request):
+
     return render(request, "dealer_list.html", {
         "dealers": Dealer.objects.all()
     })
 
 
+@manager_required
 def add_dealer(request):
+
     if request.method == "POST":
         Dealer.objects.create(
             name=request.POST.get("name"),
@@ -154,26 +194,38 @@ def add_dealer(request):
     return render(request, "add_dealer.html")
 
 
+@manager_required
 def delete_dealer(request, id):
+
     dealer = get_object_or_404(Dealer, id=id)
-    dealer.delete()
-    return redirect("dealer_list")
 
+    if request.method == "POST":
+        dealer.delete()
+        return redirect("dealer_list")
 
+    return render(request, "confirm_delete.html", {"dealer": dealer})
 # ---------------- FOOD ---------------- #
 
+@employee_required
 def fooditem_list(request):
+
     return render(request, "fooditem_list.html", {
         "items": FoodItem.objects.all()
     })
 
 
+@manager_required
 def fooditem_detail(request, pk):
+
     item = get_object_or_404(FoodItem, pk=pk)
     return render(request, "fooditem_detail.html", {"item": item})
 
+
+@manager_required
 def fooditem_add(request):
+
     if request.method == "POST":
+
         category_id = request.POST.get("category")
         dealer_id = request.POST.get("dealer")
 
@@ -197,7 +249,7 @@ def fooditem_add(request):
             price=request.POST.get("price"),
             category=category,
             dealer=dealer,
-            image=image   # ✅ safe even if empty
+            image=image
         )
 
         return redirect("fooditem_list")
@@ -208,8 +260,11 @@ def fooditem_add(request):
     })
 
 
+@manager_required
 def fooditem_edit(request, pk):
+
     item = get_object_or_404(FoodItem, pk=pk)
+
     if request.method == "POST":
         item.name = request.POST.get("name")
         item.description = request.POST.get("description")
@@ -226,12 +281,17 @@ def fooditem_edit(request, pk):
     })
 
 
+@manager_required
 def fooditem_delete(request, pk):
+
     item = get_object_or_404(FoodItem, pk=pk)
     item.delete()
     return redirect("fooditem_list")
 
+
+@employee_required
 def add_food_quantity(request):
+
     if request.method == "POST":
         for fid, qty in zip(request.POST.getlist("food_item"), request.POST.getlist("quantity")):
             food = get_object_or_404(FoodItem, id=fid)
@@ -247,30 +307,40 @@ def add_food_quantity(request):
 
 # ---------------- ORDERS ---------------- #
 
+@employee_required
 def order_list(request):
+
     return render(request, "order_list.html", {
         "orders": Order.objects.all()
     })
 
 
+@login_required
 def order_detail(request, pk):
+
     order = get_object_or_404(Order, pk=pk)
+
     return render(request, "order_detail.html", {
         "order": order,
         "items": OrderItem.objects.filter(order=order)
     })
 
 
+@login_required
 def create_order(request):
+
     customers = Customer.objects.all()
     food_items = FoodItem.objects.all()
 
     if request.method == "POST":
+
         customer = get_object_or_404(Customer, id=request.POST.get("customer"))
         order = Order.objects.create(customer=customer)
 
         for fid, qty in zip(request.POST.getlist("food_item"), request.POST.getlist("quantity")):
+
             food = get_object_or_404(FoodItem, id=fid)
+
             if food.quantity < int(qty):
                 messages.error(request, "Stock issue")
                 order.delete()
@@ -287,10 +357,14 @@ def create_order(request):
         "food_items": food_items
     })
 
+
+@manager_required
 def order_edit(request, pk):
+
     order = get_object_or_404(Order, pk=pk)
 
     if request.method == "POST":
+
         customer_id = request.POST.get("customer")
         food_item_id = request.POST.get("food_item")
         quantity = int(request.POST.get("quantity", 1))
@@ -299,6 +373,7 @@ def order_edit(request, pk):
         order.save()
 
         order_item = order.items.first()
+
         if order_item:
             order_item.food_item_id = food_item_id
             order_item.quantity = quantity
@@ -310,16 +385,20 @@ def order_edit(request, pk):
 
     return render(request, "order_edit.html", {"order": order})
 
+
+@manager_required
 def order_delete(request, pk):
+
     order = get_object_or_404(Order, pk=pk)
+
     if request.method == "POST":
         order.delete()
         return redirect("order_list")
+
     return render(request, "order_confirm_delete.html", {"order": order})
 
 
 # ---------------- SEARCH ---------------- #
-
 def global_search(request):
     q = request.GET.get("q", "")
 
@@ -329,22 +408,4 @@ def global_search(request):
         "customers": Customer.objects.filter(name__icontains=q),
         "employees": Employee.objects.filter(first_name__icontains=q),
         "orders": Order.objects.filter(id__icontains=q),
-    })
-
-# ----------------- Custom User -----------------
-
-# @login_required
-# def dashboard(request):
-#     if request.user.role != "employee":
-#         return redirect("login")
-
-#     return render(request, "dashboard.html")
-
-
-# @login_required
-# def customer_home(request):
-#     if request.user.role != "customer":
-#         return redirect("login")
-
-#     return render(request, "customer_home.html")
-
+})

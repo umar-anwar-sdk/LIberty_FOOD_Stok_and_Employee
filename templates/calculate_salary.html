@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% block content %}
+
+<!-- Premium Header -->
+<div class="card border-0 shadow-lg rounded-4 overflow-hidden mb-4">
+
+    <div class="p-4 text-white"
+        style="background: linear-gradient(135deg, #1e3c72, #2a5298); margin-top: 60px;">
+
+        <div class="d-flex justify-content-between align-items-center flex-wrap">
+
+            <div>
+                <h2 class="fw-bold mb-1">
+                    💰 Salary Calculation Result
+                </h2>
+
+                <p class="mb-0 opacity-75">
+                    Employee payroll breakdown for selected period
+                </p>
+            </div>
+
+            <div class="bg-white bg-opacity-25 px-3 py-2 rounded-pill mt-2 mt-md-0">
+                📊 Payroll
+            </div>
+
+        </div>
+
+    </div>
+</div>
+
+<!-- Result Card -->
+<div class="card border-0 shadow-lg rounded-4">
+
+    <div class="card-body p-4">
+
+        <div class="mb-4">
+            <h4 class="fw-bold text-primary">📅 Calculation Summary</h4>
+        </div>
+
+        <div class="row">
+
+            <div class="col-md-6 mb-3">
+                <div class="p-3 rounded-3 bg-light">
+                    <small class="text-muted">Period</small>
+                    <h5 class="mb-0">{{ period }}</h5>
+                </div>
+            </div>
+
+            <div class="col-md-6 mb-3">
+                <div class="p-3 rounded-3 bg-light">
+                    <small class="text-muted">Calculated Salary</small>
+                    <h5 class="mb-0 text-success">{{ calculated_salary }}</h5>
+                </div>
+            </div>
+
+            <div class="col-md-6 mb-3">
+                <div class="p-3 rounded-3 bg-light">
+                    <small class="text-muted">Advance Deducted</small>
+                    <h5 class="mb-0 text-warning">{{ advance_used }}</h5>
+                </div>
+            </div>
+
+            <div class="col-md-6 mb-3">
+                <div class="p-3 rounded-3 bg-light">
+                    <small class="text-muted">Remaining Salary</small>
+                    <h5 class="mb-0 text-danger">{{ remaining_salary }}</h5>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="d-flex justify-content-end mt-3">
+
+            <a href="{% url 'employee_detail' employee.id %}"
+               class="btn btn-primary rounded-pill px-4 shadow-sm">
+
+                ⬅ Back to Employee
+            </a>
+
+        </div>
+
+    </div>
+</div>
+
+{% endblock %}

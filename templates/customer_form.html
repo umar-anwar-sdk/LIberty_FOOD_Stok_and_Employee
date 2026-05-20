@@ -2,54 +2,102 @@
 {% load static %}
 
 {% block content %}
-  <div class="main-panel">
-    <div class="content-wrapper">
-      <div class="page-header">
-        <h3 class="page-title">Add Customer</h3>
-        <nav aria-label="breadcrumb">
-          <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a href="{% url 'customer_list' %}">Customers</a></li>
-            <li class="breadcrumb-item active" aria-current="page">Add Customer</li>
-          </ol>
-        </nav>
+
+<!-- Premium Header -->
+<div class="card border-0 shadow-lg rounded-4 overflow-hidden">
+
+  <div class="p-4 text-white"
+       style="background: linear-gradient(135deg, #1e3c72, #2a5298); margin-top: 50px;">
+
+    <div class="d-flex justify-content-between align-items-center flex-wrap">
+
+      <div>
+        <h2 class="fw-bold mb-1">
+          ➕ Add Customer
+        </h2>
+
+        <p class="mb-0 opacity-75">
+          Create a new customer profile with contact details
+        </p>
       </div>
-
-      <div class="row">
-        <div class="col-md-12 grid-margin stretch-card">
-          <div class="card">
-            <div class="card-body">
-              <h4 class="card-title">Customer Information</h4>
-              <p class="card-description">Fill in the details below</p>
-
-              <form method="post" class="forms-sample">
-                {% csrf_token %}
-                <div class="form-group">
-                  <label for="name">Name</label>
-                  <input type="text" name="name" class="form-control" id="name" placeholder="Enter customer name"
-                    required>
-                </div>
-
-                <div class="form-group">
-                  <label for="address">Address</label>
-                  <textarea name="address" class="form-control" id="address" rows="3"
-                    placeholder="Enter address"></textarea>
-                </div>
-
-                <div class="form-group">
-                  <label for="phone">Phone</label>
-                  <input type="text" name="phone" class="form-control" id="phone" placeholder="Enter phone number"
-                    required>
-                </div>
-
-                <button type="submit" class="btn btn-primary mr-2">Save</button>
-                <a href="{% url 'customer_add' %}" class="btn btn-light">Cancel</a>
-              </form>
-            </div>
-          </div>
-        </div>
-      </div>
-
     </div>
+
   </div>
+
+</div>
+
+<!-- Form Card -->
+<div class="main-panel">
+  <div class="content-wrapper">
+
+    <div class="row">
+      <div class="col-md-12 grid-margin stretch-card">
+
+        <div class="card border-0 shadow-lg rounded-4">
+
+          <div class="card-body p-4">
+
+            <p class="text-muted mb-4">
+              Fill in the details below to add a new customer
+            </p>
+
+            <form method="post" class="forms-sample">
+              {% csrf_token %}
+
+              <!-- Name -->
+              <div class="mb-3">
+                <label class="form-label fw-semibold">Name</label>
+                <input type="text"
+                       name="name"
+                       class="form-control rounded-3"
+                       placeholder="Enter customer name"
+                       required>
+              </div>
+
+              <!-- Address -->
+              <div class="mb-3">
+                <label class="form-label fw-semibold">Address</label>
+                <textarea name="address"
+                          class="form-control rounded-3"
+                          rows="3"
+                          placeholder="Enter customer address"></textarea>
+              </div>
+
+              <!-- Phone -->
+              <div class="mb-4">
+                <label class="form-label fw-semibold">Phone</label>
+                <input type="text"
+                       name="phone"
+                       class="form-control rounded-3"
+                       placeholder="Enter phone number"
+                       required>
+              </div>
+
+              <!-- Buttons -->
+              <div class="d-flex justify-content-between">
+
+                <a href="{% url 'customer_list' %}"
+                   class="btn btn-outline-secondary rounded-pill px-4">
+                  ⬅ Back
+                </a>
+
+                <button type="submit"
+                        class="btn btn-success rounded-pill px-5 shadow-sm">
+                  💾 Save Customer
+                </button>
+
+              </div>
+
+            </form>
+
+          </div>
+
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+</div>
 
 {% endblock %}

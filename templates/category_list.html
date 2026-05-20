@@ -1,40 +1,95 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="col-12 card shadow p-4">
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <h2 class="mt-5">Category List</h2>
-        <a href="{% url 'add_category' %}" class="btn btn-primary mt-5">Add Category</a>
-    </div>
 
-    <table class="table table-bordered table-hover">
-        <thead class="table-light">
-            <tr>
-                <th>#</th>
-                <th>Category Name</th>
-                <th>Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for category in categories %}
-            <tr>
-                <td>{{ forloop.counter }}</td>
-                <td>{{ category.name }}</td>
-                <td>
-                    <a href="{% url 'category_edit' category.id %}" class="btn btn-sm btn-warning">✏ Edit</a>
-                    <a href="{% url 'category_delete' category.id %}" 
-                        class="btn btn-sm btn-danger"
-                        onclick="return confirm('Are you sure to delete this?')">
-                         Delete
+<!-- Premium Header -->
+<div class="card border-0 shadow-lg rounded-4 overflow-hidden">
+
+    <div class="p-4 text-white"
+        style="background: linear-gradient(135deg, #1e3c72, #2a5298); margin-top: 60px;">
+
+        <div class="d-flex justify-content-between align-items-center flex-wrap">
+
+            <div>
+                <h2 class="fw-bold mb-1">
+                    📂 Categories
+                </h2>
+
+                <p class="mb-0 opacity-75">
+                    Manage product categories and organization
+                </p>
+            </div>
+                <div class="d-flex justify-content-between align-items-center ">
+
+        <a href="{% url 'add_category' %}"
+           class="btn btn-primary rounded-pill px-4 shadow-sm">
+            ➕ Add Category
+        </a>
+
+    </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- Table Card -->
+<div class="card border-0 shadow-lg rounded-4 p-4 mt-2">
+
+    <div class="table-responsive">
+
+        <table class="table table-hover align-middle">
+
+            <thead class="table-dark">
+                <tr>
+                    <th>#</th>
+                    <th>Category Name</th>
+                    <th class="text-center">Actions</th>
+                </tr>
+            </thead>
+
+            <tbody>
+
+                {% for category in categories %}
+                <tr>
+
+                    <td class="fw-semibold">{{ forloop.counter }}</td>
+
+                    <td>
+                        <span class="badge bg-secondary px-3 py-2 rounded-pill">
+                            {{ category.name }}
+                        </span>
+                    </td>
+
+                    <td class="text-center">
+
+                        <a href="{% url 'category_edit' category.id %}"
+                           class="btn btn-sm btn-warning rounded-pill px-3">
+                            ✏ Edit
                         </a>
 
-                </td>
-            </tr>
-            {% empty %}
-            <tr>
-                <td colspan="3" class="text-center text-muted">No categories available.</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+                        <a href="{% url 'category_delete' category.id %}"
+                           class="btn btn-sm btn-danger rounded-pill px-3"
+                           onclick="return confirm('Are you sure to delete this?')">
+                            🗑 Delete
+                        </a>
+
+                    </td>
+
+                </tr>
+
+                {% empty %}
+                <tr>
+                    <td colspan="3" class="text-center text-muted py-4">
+                        No categories available.
+                    </td>
+                </tr>
+                {% endfor %}
+
+            </tbody>
+
+        </table>
+
+    </div>
+
 </div>
+
 {% endblock %}

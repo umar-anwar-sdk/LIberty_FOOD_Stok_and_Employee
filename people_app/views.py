@@ -1,4 +1,4 @@
-from django.shortcuts import render, get_object_or_404, redirect
+from django.shortcuts import render, get_object_or_404, redirect, HttpResponse
 from django.contrib import messages
 from decimal import Decimal
 from datetime import datetime
@@ -9,7 +9,9 @@ from django.db.models import Sum
 from .models import Employee, Customer
 from .models import Employee, Customer, EmployeeSalary, EmployeeTransaction
 from django.utils.dateparse import parse_date
-from django.contrib.auth.models import User
+from django.conf import settings
+from accounts.models import CustomUser
+
 
 
 
@@ -19,8 +21,6 @@ def customer_list(request):
 
 
 def customer_add(request):
-    
-
     if request.method == "POST":
         name = request.POST.get("name")
         address = request.POST.get("address")
@@ -29,13 +29,15 @@ def customer_add(request):
         password = request.POST.get("password")
 
         if not email:
-            email = "test@gmail.com"
+            email = f"user{phone}@gmail.com"  # temporary unique hack
 
-        user = User.objects.create_user(
-            username = email,
+        if CustomUser.objects.filter(username=email).exists():
+            return HttpResponse("User already exists")
+
+        user = CustomUser.objects.create_user(
+            username=email,
             email=email,
             first_name=name,
-            last_name="",
             password=password
         )
 
@@ -266,3 +268,4 @@ def calculate_salary(request, employee_id):
             })
 
     return render(request, "calculate_salary.html", context)
+

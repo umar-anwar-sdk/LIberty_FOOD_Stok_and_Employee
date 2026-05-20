@@ -1,29 +1,69 @@
-<h2>Search Results for "{{ query }}"</h2>
+{% extends 'base.html' %}
+{% block content %}
 
-<h3>Food Items</h3>
-{% for f in food %}
-<p>{{ f.name }}</p>
-{% empty %}
-<p>No food found</p>
-{% endfor %}
+<div class="content-wrapper p-4">
 
-<h3>Customers</h3>
-{% for c in customers %}
-<p>{{ c.name }}</p>
-{% empty %}
-<p>No customers found</p>
-{% endfor %}
+    <h3 class="mb-4">Search Results for "{{ query }}"</h3>
 
-<h3>Employees</h3>
-{% for e in employees %}
-<p>{{ e.first_name }} {{ e.last_name }}</p>
-{% empty %}
-<p>No employees found</p>
-{% endfor %}
+    <!-- FOOD -->
+    {% if food %}
+    <div class="mb-4">
+        <h5>🍔 Food</h5>
 
-<h3>Orders</h3>
-{% for o in orders %}
-<p>Order #{{ o.id }}</p>
-{% empty %}
-<p>No orders found</p>
-{% endfor %}
+        {% for item in food %}
+        <div class="card p-2 mb-2 shadow-sm">
+            <strong>{{ item.name }}</strong>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- CUSTOMERS -->
+    {% if customers %}
+    <div class="mb-4">
+        <h5>👤 Customers</h5>
+
+        {% for c in customers %}
+        <div class="card p-2 mb-2 shadow-sm">
+            {{ c.name }}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- EMPLOYEES -->
+    {% if employees %}
+    <div class="mb-4">
+        <h5>👨‍💼 Employees</h5>
+
+        {% for e in employees %}
+        <div class="card p-2 mb-2 shadow-sm">
+            {{ e.first_name }} {{ e.last_name }}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- ORDERS -->
+    {% if orders %}
+    <div class="mb-4">
+        <h5>📦 Orders</h5>
+
+        {% for o in orders %}
+        <div class="card p-2 mb-2 shadow-sm">
+            Order ID: <strong>{{ o.id }}</strong>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- NO RESULTS -->
+    {% if not food and not customers and not employees and not orders %}
+    <div class="alert alert-warning mt-4">
+        No results found for "<strong>{{ query }}</strong>"
+    </div>
+    {% endif %}
+
+</div>
+
+{% endblock %}

@@ -1,8 +1,30 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="card shadow p-4">
-    <h2 class="mb-4">🛒 Order Detail</h2>
 
+<!-- Premium Header -->
+<div class="card border-0 shadow-lg rounded-4 overflow-hidden mb-4">
+
+    <div class="p-4 text-white"
+        style="background: linear-gradient(135deg, #1e3c72, #2a5298); margin-top: 70px;">
+
+        <div class="d-flex justify-content-between align-items-center flex-wrap">
+
+            <div>
+                <h2 class="fw-bold mb-1">
+                    🛒 Order Detail
+                </h2>
+
+                <p class="mb-0 opacity-75">
+                    View complete order information
+                </p>
+            </div>
+
+        </div>
+
+    </div>
+</div>
+
+<div class="card shadow p-4">
     <table class="table table-bordered table-striped">
         <thead class="table-dark">
             <tr>
@@ -13,15 +35,15 @@
             </tr>
         </thead>
         <tbody>
-            {% for item in items %}
-            <tr>
-                <td>{{ item.name }}</td>
-                <td>{{ item.quantity }}</td>
-                <td>{{ item.price }}</td>
-                <td>{{ item.subtotal }}</td>
-            </tr>
-            {% endfor %}
-        </tbody>
+    {% for item in items %}
+    <tr>
+        <td>{{ item.food_item.name }}</td>
+        <td>{{ item.quantity }}</td>
+        <td>{{ item.food_item.price }}</td>
+        <td>{{ item.quantity|floatformat:2|add:"0" }}</td>
+    </tr>
+    {% endfor %}
+</tbody>
         <tfoot class="table-light">
             <tr>
                 <th colspan="3" class="text-end">Total</th>
@@ -35,4 +57,5 @@
         <a href="{% url 'order_list' %}" class="btn btn-secondary">🔙 Back to List</a>
     </div>
 </div>
+
 {% endblock %}

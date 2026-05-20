@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Manager Dashboard</title>
+</head>
+<body>
+
+<h1>Manager Dashboard - {{ request.user.username }}</h1>
+
+<hr>
+
+<h2>Quick Stats</h2>
+
+<ul>
+    <li>Total Employees: {{ total_employees }}</li>
+    <li>Total Food Items: {{ total_food_items }}</li>
+    <li>Total Stock: {{ total_stock }}</li>
+    <li>Total Orders: {{ total_orders }}</li>
+</ul>
+
+<hr>
+
+<h2>Recent Orders</h2>
+
+<table border="1">
+    <tr>
+        <th>Order ID</th>
+        <th>Customer</th>
+        <th>Status</th>
+    </tr>
+
+    {% for order in recent_orders %}
+    <tr>
+        <td>{{ order.id }}</td>
+        <td>{{ order.customer.user.username }}</td>
+        <td>{{ order.status }}</td>
+    </tr>
+    {% endfor %}
+</table>
+
+</body>
+</html>

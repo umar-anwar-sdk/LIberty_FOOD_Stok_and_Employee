@@ -2,58 +2,111 @@
 {% load static %}
 
 {% block content %}
+
+<!-- Premium Header -->
+<div class="card border-0 shadow-lg rounded-4 overflow-hidden">
+
+    <div class="p-4 text-white"
+        style="background: linear-gradient(135deg, #1e3c72, #2a5298); margin-top: 70px;">
+
+        <div class="d-flex justify-content-between align-items-center flex-wrap">
+
+            <div>
+                <h2 class="fw-bold mb-1">
+                    👨‍💼 Employees
+                </h2>
+
+                <p class="mb-0 opacity-75">
+                    Manage all company employees and their details
+                </p>
+
+            </div>
+            <div class="d-flex justify-content-end mt-3">
+
+              <a href="{% url 'employee_add' %}"
+                 class="btn btn-primary rounded-pill px-4 shadow-sm">
+                ➕ Add Employee
+              </a>
+
+            </div>
+
+        </div>
+
+    </div>
+</div>
+
 <div class="main-panel" style="width: 100%;">
   <div class="content-wrapper">
-    <div class="page-header mb-3">
-      <h3 class="page-title">Employees</h3>
-      <nav aria-label="breadcrumb">
-        <ol class="breadcrumb">
-          <li class="breadcrumb-item"><a href="{% url 'home' %}">Dashboard</a></li>
-          <li class="breadcrumb-item active" aria-current="page">Employees</li>
-        </ol>
-      </nav>
-    </div>
 
     <div class="row">
       <div class="col-md-12 grid-margin stretch-card">
-        <div class="card">
-          <div class="card-body">
-            <h4 class="card-title" style="text-align: center; font-weight: bolder;">Employee_List</h4>
+
+        <div class="card border-0 shadow-lg rounded-4">
+
+          <div class="card-body p-4">
 
             <div class="table-responsive">
-              <table class="table table-bordered">
-                <thead class="thead-light">
+
+              <table class="table table-hover align-middle">
+
+                <thead class="table-dark">
                   <tr>
                     <th>Name</th>
                     <th>Post</th>
                     <th>Salary</th>
-                    <th>Actions</th>
+                    <th class="text-center">Actions</th>
                   </tr>
                 </thead>
+
                 <tbody>
                   {% for e in employees %}
                   <tr>
-                    <td>{{ e.first_name }} {{ e.last_name }}</td>
-                    <td>{{ e.position }}</td>
-                    <td>{{ e.base_salary }}</td>
-                    <td>
-                      <a href="{% url 'employee_detail' e.id %}" class="btn btn-sm btn-info">View</a>
+
+                    <td class="fw-semibold">
+                      {{ e.first_name }} {{ e.last_name }}
                     </td>
+
+                    <td>
+                      <span class="badge bg-secondary">
+                        {{ e.position }}
+                      </span>
+                    </td>
+
+                    <td class="text-success fw-bold">
+                      {{ e.base_salary }}
+                    </td>
+
+                    <td class="text-center">
+                      <a href="{% url 'employee_detail' e.id %}"
+                         class="btn btn-sm btn-info rounded-pill px-3">
+                        View
+                      </a>
+                    </td>
+
                   </tr>
                   {% empty %}
                   <tr>
-                    <td colspan="4" class="text-center">No employees found.</td>
+                    <td colspan="4" class="text-center text-muted py-4">
+                      No employees found.
+                    </td>
                   </tr>
                   {% endfor %}
                 </tbody>
+
               </table>
+
             </div>
-            <a href="{% url 'employee_add' %}" class="btn btn-primary mt-3">Add Employee</a>
+
+
+
           </div>
+
         </div>
+
       </div>
     </div>
 
   </div>
 </div>
+
 {% endblock %}

@@ -109,3 +109,19 @@ def signup_view(request):
         return redirect("login")
 
     return render(request, "signup.html")
+
+
+
+def dashboard_redirect(request):
+
+    if request.user.role == 'admin':
+        return redirect('home.html')
+
+    elif request.user.role == 'manager':
+        return redirect('manager_dashboard')
+
+    elif request.user.role == 'employee':
+        return redirect('employee_dashboard')
+
+    elif request.user.role == 'customer':
+        return redirect('customer_dashboard')

@@ -1,63 +1,92 @@
 {% extends "base.html" %}
 {% block content %}
 
-<div class="container-fluid h-100 d-flex align-items-center justify-content-center">
+<!-- Premium Header -->
+<div class="card border-0 shadow-lg rounded-4 overflow-hidden mb-4">
 
-    <div class="card shadow-lg border-0" style="width:600px;">
+    <div class="p-4 text-white"
+        style="background: linear-gradient(135deg, #1e3c72, #2a5298); margin-top: 70px;">
 
-        <div class="card-header bg-dark text-white">
-            <h4 class="mb-0">
-                <i class="fa fa-list"></i> Add New Category
-            </h4>
+        <div class="d-flex justify-content-between align-items-center flex-wrap">
+
+            <div>
+                <h2 class="fw-bold mb-1">
+                    📂 Add Category
+                </h2>
+
+                <p class="mb-0 opacity-75">
+                    Create new category with image and status settings
+                </p>
+            </div>
+
+
         </div>
 
+    </div>
+</div>
+
+<!-- Form Card -->
+<div class="container-fluid d-flex align-items-center justify-content-center">
+
+    <div class="card border-0 shadow-lg rounded-4" style="width:650px;">
+
         <div class="card-body p-4">
+
 
             <form method="POST" enctype="multipart/form-data">
                 {% csrf_token %}
 
-                <!-- Category Name -->
+                <!-- Name -->
                 <div class="mb-3">
-                    <label class="form-label"><b>Category Name</b></label>
-                    <input type="text" name="name" class="form-control"
-                        placeholder="Enter category name" required>
+                    <label class="form-label fw-semibold">Category Name</label>
+                    <input type="text" name="name"
+                           class="form-control rounded-3"
+                           placeholder="Enter category name"
+                           required>
                 </div>
 
-                <!-- Category Image -->
+                <!-- Image -->
                 <div class="mb-3">
-                    <label class="form-label"><b>Category Image</b></label>
-                    <input type="file" name="image" class="form-control"
-                        onchange="previewImage(event)">
+                    <label class="form-label fw-semibold">Category Image</label>
+                    <input type="file" name="image"
+                           class="form-control rounded-3"
+                           onchange="previewImage(event)">
                 </div>
 
-                <!-- Image Preview -->
+                <!-- Preview -->
                 <div class="mb-3 text-center">
-                    <img id="preview" width="120" style="display:none; border-radius:8px;">
+                    <img id="preview"
+                         style="display:none; width:120px; height:120px; object-fit:cover; border-radius:12px; border:2px solid #eee;">
                 </div>
 
                 <!-- Status -->
-                <div class="mb-3">
-                    <label class="form-label"><b>Status</b></label>
-                    <select name="status" class="form-control">
+                <div class="mb-4">
+                    <label class="form-label fw-semibold">Status</label>
+                    <select name="status" class="form-select rounded-3">
                         <option value="1">Active</option>
                         <option value="0">Inactive</option>
                     </select>
                 </div>
 
                 <!-- Buttons -->
-                <div class="d-flex justify-content-between mt-3">
-                    <a href="{% url 'category_list' %}" class="btn btn-secondary">
+                <div class="d-flex justify-content-between">
+
+                    <a href="{% url 'category_list' %}"
+                       class="btn btn-outline-secondary rounded-pill px-4">
                         ⬅ Back
                     </a>
 
-                    <button type="submit" class="btn btn-success">
-                        ✅ Add Category
+                    <button type="submit"
+                            class="btn btn-success rounded-pill px-5 shadow-sm">
+                        ✅ Save Category
                     </button>
+
                 </div>
 
             </form>
 
         </div>
+
     </div>
 
 </div>
