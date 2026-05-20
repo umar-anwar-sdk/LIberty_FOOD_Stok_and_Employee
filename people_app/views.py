@@ -32,6 +32,7 @@ def customer_add(request):
             email = "test@gmail.com"
 
         user = User.objects.create_user(
+            username = email,
             email=email,
             first_name=name,
             last_name="",
