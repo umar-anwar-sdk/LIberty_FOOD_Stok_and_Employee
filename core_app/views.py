@@ -398,6 +398,21 @@ def order_delete(request, pk):
     return render(request, "order_confirm_delete.html", {"order": order})
 
 
+
+def dashboard(request):
+    recent_orders = Order.objects.prefetch_related('items__food_item').order_by('-order_date')[:10]
+
+    for order in recent_orders:
+        order.total_price = sum(
+            item.food_item.price * item.quantity
+            for item in order.items.all()
+        )
+
+    return render(request, 'dashboard.html', {
+        'recent_orders': recent_orders
+    })
+
+
 # ---------------- SEARCH ---------------- #
 def global_search(request):
     q = request.GET.get("q", "")

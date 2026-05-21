@@ -6,34 +6,6 @@ from django.contrib.auth.hashers import make_password
 
 User = get_user_model()
 
-
-
-# def login_view(request):
-#     if request.method == "POST":
-#         username = request.POST.get("username")
-#         password = request.POST.get("password")
-
-#         user = authenticate(request, username=username, password=password)
-
-#         if user is not None:
-#             login(request, user)
-
-#             # 🔥 ROLE BASED REDIRECT
-#             if user.role == "employee":
-#                 return redirect("dashboard")
-
-#             elif user.role == "customer":
-#                 return redirect("customer_home")
-
-#             else:
-#                 return redirect("admin:index")
-
-#         else:
-#             messages.error(request, "Invalid credentials")
-
-#     return render(request, "login.html")
-
-
 def login_view(request):
 
     if request.method == "POST":
@@ -118,10 +90,10 @@ def dashboard_redirect(request):
         return redirect('home.html')
 
     elif request.user.role == 'manager':
-        return redirect('manager_dashboard')
+        return redirect('manager.html')
 
     elif request.user.role == 'employee':
-        return redirect('employee_dashboard')
+        return redirect('employee.html')
 
     elif request.user.role == 'customer':
-        return redirect('customer_dashboard')
+        return redirect('customer.html')

@@ -11,6 +11,8 @@ from .models import Employee, Customer, EmployeeSalary, EmployeeTransaction
 from django.utils.dateparse import parse_date
 from django.conf import settings
 from accounts.models import CustomUser
+from .models import Employee, EmployeeTransaction
+from django.http import HttpResponse
 
 
 
@@ -228,9 +230,11 @@ def end_job(request, employee_id):
 
 def calculate_salary(request, employee_id):
     employee = get_object_or_404(Employee, id=employee_id)
+    transactions = EmployeeTransaction.objects.filter(employee=employee)
 
     context = {
         "employee": employee,
+        "transactions": transactions,
         "calculated_salary": None,
         "advance_used": None,
         "remaining_salary": None,
@@ -268,4 +272,3 @@ def calculate_salary(request, employee_id):
             })
 
     return render(request, "calculate_salary.html", context)
-

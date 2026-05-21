@@ -1,11 +1,11 @@
 {% extends "base.html" %}
 {% block content %}
 
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css">
 <!-- Premium Header -->
 <div class="card border-0 shadow-lg rounded-4 overflow-hidden mb-4">
 
-    <div class="p-4 text-white"
-        style="background: linear-gradient(135deg, #1e3c72, #2a5298); margin-top: 60px;">
+    <div class="p-4 text-white" style="background: linear-gradient(135deg, #1e3c72, #2a5298); margin-top: 60px;">
 
         <div class="d-flex justify-content-between align-items-center flex-wrap">
 
@@ -18,12 +18,16 @@
                     Employee payroll breakdown for selected period
                 </p>
             </div>
+            <a class="btn btn-danger rounded-pill px-4 shadow-sm">
+                <i class="fa-regular fa-file-pdf"></i> Download PDF
+            </a>
+            <a href="{% url 'employee_detail' employee.id %}" class="btn btn-primary rounded-pill px-4 shadow-sm mt-2">
 
-            <div class="bg-white bg-opacity-25 px-3 py-2 rounded-pill mt-2 mt-md-0">
-                📊 Payroll
-            </div>
+                ⬅ Back to Employee
+            </a>
 
         </div>
+
 
     </div>
 </div>
@@ -33,8 +37,9 @@
 
     <div class="card-body p-4">
 
-        <div class="mb-4">
-            <h4 class="fw-bold text-primary">📅 Calculation Summary</h4>
+        <div class="mb-4 d-flex">
+            <i class="fa-solid fa-calculator"></i>
+            <h4 class="fw-bold text-primary"> Calculation Summary</h4>
         </div>
 
         <div class="row">
@@ -49,37 +54,118 @@
             <div class="col-md-6 mb-3">
                 <div class="p-3 rounded-3 bg-light">
                     <small class="text-muted">Calculated Salary</small>
-                    <h5 class="mb-0 text-success">{{ calculated_salary }}</h5>
+                    <h5 class="mb-0 text-success">{{ calculated_salary|floatformat:2 }}</h5>
                 </div>
             </div>
 
             <div class="col-md-6 mb-3">
                 <div class="p-3 rounded-3 bg-light">
                     <small class="text-muted">Advance Deducted</small>
-                    <h5 class="mb-0 text-warning">{{ advance_used }}</h5>
+                    <h5 class="mb-0 text-warning">{{ advance_used|floatformat:2 }}</h5>
                 </div>
             </div>
 
             <div class="col-md-6 mb-3">
                 <div class="p-3 rounded-3 bg-light">
                     <small class="text-muted">Remaining Salary</small>
-                    <h5 class="mb-0 text-danger">{{ remaining_salary }}</h5>
+                    <h5 class="mb-0 text-danger">{{ remaining_salary|floatformat:2 }}</h5>
                 </div>
             </div>
 
         </div>
 
-        <div class="d-flex justify-content-end mt-3">
+    </div>
 
-            <a href="{% url 'employee_detail' employee.id %}"
-               class="btn btn-primary rounded-pill px-4 shadow-sm">
+</div>
 
-                ⬅ Back to Employee
-            </a>
+<!-- Transactions Table -->
+<div class="card border-0 shadow-lg rounded-4 mt-4">
+
+    <div class="card-body p-4">
+
+        <div class="mb-4 d-flex align-items-center">
+            <i class="fa-solid fa-money-bill-transfer text-primary me-2"></i>
+
+            <h4 class="fw-bold text-primary mb-0">
+                Transaction History
+            </h4>
+        </div>
+
+        <div class="table-responsive">
+
+            <table class="table table-striped table-hover table-bordered align-middle">
+
+                <thead class="table-dark">
+
+                    <tr>
+                        <th>Date</th>
+                        <th>Type</th>
+                        <th>Amount</th>
+                        <th>Reason</th>
+                    </tr>
+
+                </thead>
+
+                <tbody>
+
+                    {% for t in transactions %}
+
+                    <tr>
+
+                        <td>
+                            {{ t.date|date:"d M Y H:i" }}
+                        </td>
+
+                        <td>
+
+                            {% if t.transaction_type == 'taken' %}
+
+                            <span class="badge bg-danger">
+                                Cash Taken
+                            </span>
+
+                            {% else %}
+
+                            <span class="badge bg-success">
+                                Cash Deposit
+                            </span>
+
+                            {% endif %}
+
+                        </td>
+
+                        <td>
+                            {{ t.amount }}
+                        </td>
+
+                        <td>
+                            {{ t.reason|default:"-" }}
+                        </td>
+
+                    </tr>
+
+                    {% empty %}
+
+                    <tr>
+
+                        <td colspan="4" class="text-center text-muted py-4">
+                            No transactions available
+                        </td>
+
+                    </tr>
+
+                    {% endfor %}
+
+                </tbody>
+
+            </table>
 
         </div>
 
     </div>
+
 </div>
+
+
 
 {% endblock %}
