@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<div class="container mt-5">
+
+    <div class="card shadow">
+
+        <div class="card-body text-center">
+
+            {% if request.user.profile_image %}
+                <img src="{{ request.user.profile_image.url }}"
+                     width="150"
+                     height="150"
+                     class="rounded-circle mb-3">
+            {% endif %}
+
+            <h3> {{ request.user.first_name }} {{ request.user.last_name }}</h3>
+
+            <p><strong>Email:</strong> {{ request.user.email }}</p>
+
+            <p><strong>Phone:</strong> {{ request.user.phone }}</p>
+
+            <p>
+                <strong>Role:</strong>
+                {{ request.user.role }}
+            </p>
+
+            <a href="{% url 'edit_profile' %}"
+               class="btn btn-primary">
+
+                Edit Profile
+            </a>
+
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}

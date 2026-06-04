@@ -1,11 +1,74 @@
 {% extends "base.html" %}
 {% block content %}
+<style>
+@media print {
+
+    /* 🔥 Hide everything unnecessary */
+    nav,
+    .navbar,
+    footer,
+    .btn,
+    .sidebar,
+    .no-print,
+    .d-print-none {
+        display: none !important;
+    }
+
+    /* 🧼 Clean page background */
+    body {
+        background: white !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+
+    /* 📦 Remove shadows and effects */
+    .card,
+    .shadow,
+    .shadow-lg {
+        box-shadow: none !important;
+        border: none !important;
+    }
+
+    /* 📏 Make layout full width in print */
+    .container,
+    .container-fluid {
+        width: 100% !important;
+        max-width: 100% !important;
+    }
+
+    /* ✂️ Remove extra spacing */
+    .p-4,
+    .p-3 {
+        padding: 10px !important;
+    }
+
+    /* 🧾 Improve text readability */
+    h1, h2, h3, h4, h5, h6, p, span, td, th {
+        color: #000 !important;
+    }
+
+    /* 📊 Table clean print */
+    table {
+        border-collapse: collapse !important;
+    }
+
+    table th,
+    table td {
+        border: 1px solid #ddd !important;
+    }
+
+    /* 🚫 Hide scrollbars */
+    * {
+        overflow: visible !important;
+    }
+}
+</style>
 
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css">
 <!-- Premium Header -->
 <div class="card border-0 shadow-lg rounded-4 overflow-hidden mb-4">
 
-    <div class="p-4 text-white" style="background: linear-gradient(135deg, #1e3c72, #2a5298); margin-top: 60px;">
+    <div class="p-4 text-white" style="background: linear-gradient(135deg, #1e3c72, #2a5298); ">
 
         <div class="d-flex justify-content-between align-items-center flex-wrap">
 
@@ -18,7 +81,7 @@
                     Employee payroll breakdown for selected period
                 </p>
             </div>
-            <a class="btn btn-danger rounded-pill px-4 shadow-sm">
+            <a onclick="window.print()" class="btn btn-danger rounded-pill px-4 shadow-sm">
                 <i class="fa-regular fa-file-pdf"></i> Download PDF
             </a>
             <a href="{% url 'employee_detail' employee.id %}" class="btn btn-primary rounded-pill px-4 shadow-sm mt-2">

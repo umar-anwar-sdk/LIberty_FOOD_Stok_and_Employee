@@ -1,17 +1,38 @@
 {% extends "base.html" %}
 {% block content %}
+<!-- Premium Header -->
+<div class="card border-0 shadow-lg rounded-4 overflow-hidden mb-4">
 
-<div class="container mt-5">
+    <div class="p-4 text-white"
+        style="background: linear-gradient(135deg, #1e3c72, #2a5298); ">
+
+        <div class="d-flex justify-content-between align-items-center flex-wrap">
+
+            <div>
+                <h2 class="fw-bold mb-1">
+                    Dealers List
+                </h2>
+
+                <p class="mb-0 opacity-75">
+                    Manage Your All Dealers Here
+                </p>
+            </div>
+            <a href="{% url 'add_dealer' %}" class="btn btn-success" > Add New Dealer</a>
+
+
+
+        </div>
+
+    </div>
+</div>
+
+<div class="container">
 
     <div class="card shadow">
-        <div class="card-header bg-dark text-white">
-            <h4 class="mb-0">Dealer List</h4>
-        </div>
 
         <div class="card-body">
 
-            <a href="{% url 'add_dealer' %}" class="btn btn-success mb-3"> Add New Dealer</a>
-
+            
             <table class="table table-striped table-hover">
                 <thead>
                     <tr>

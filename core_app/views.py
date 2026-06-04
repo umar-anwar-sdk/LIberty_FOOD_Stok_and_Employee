@@ -34,6 +34,10 @@ def home(request):
 
         total_orders = Order.objects.count()
 
+        total_customers = Customer.objects.count()
+        total_dealers = Dealer.objects.count()
+        total_category = Category.objects.count()
+
         food_names = list(FoodItem.objects.values_list("name", flat=True))
         food_quantities = list(FoodItem.objects.values_list("quantity", flat=True))
 
@@ -51,6 +55,11 @@ def home(request):
             .order_by("-id")[:5]
         )
 
+        for order in recent_orders:
+            order.total_price = sum(
+            item.food_item.price * item.quantity
+            for item in order.items.all()
+    )
         top_food = (
             OrderItem.objects.values("food_item__name")
             .annotate(total=Sum("quantity"))
@@ -80,6 +89,9 @@ def home(request):
             "total_food_items": total_food_items,
             "total_stock": total_stock,
             "total_orders": total_orders,
+            "customers": total_customers,
+            "total_dealers": total_dealers,
+            "total_category": total_category,
             "food_names": json.dumps(food_names),
             "food_quantities": json.dumps(food_quantities),
             "review_labels": json.dumps(review_labels),
@@ -151,6 +163,20 @@ def add_category(request):
 
 
 @manager_required
+def fooditem_detail(request, pk):
+
+    item = get_object_or_404(FoodItem, pk=pk)
+
+    total_sold = OrderItem.objects.filter(food_item=item).aggregate(
+        total=Sum('quantity')
+    )['total'] or 0
+
+    return render(request, "fooditem_detail.html", {
+        "item": item,
+        "total_sold": total_sold
+    })
+
+@manager_required
 def category_edit(request, pk):
 
     category = get_object_or_404(Category, pk=pk)
@@ -215,49 +241,40 @@ def fooditem_list(request):
 
 
 @manager_required
-def fooditem_detail(request, pk):
-
-    item = get_object_or_404(FoodItem, pk=pk)
-    return render(request, "fooditem_detail.html", {"item": item})
-
-
-@manager_required
 def fooditem_add(request):
 
-    if request.method == "POST":
+    if request.method != "POST":
+        return render(request, "fooditem_form.html", {
+            "categories": Category.objects.all(),
+            "dealers": Dealer.objects.all()
+        })
+    category_id = request.POST.get("category")
+    dealer_id = request.POST.get("dealer")
 
-        category_id = request.POST.get("category")
-        dealer_id = request.POST.get("dealer")
+    # category must exist
+    if not category_id:
+        return render(request, "fooditem_form.html", {
+            "error": "Category is required",
+            "categories": Category.objects.all(),
+            "dealers": Dealer.objects.all()
+        })
 
-        # category must exist
-        if not category_id:
-            return render(request, "fooditem_form.html", {
-                "error": "Category is required",
-                "categories": Category.objects.all(),
-                "dealers": Dealer.objects.all()
-            })
+    category = get_object_or_404(Category, id=category_id)
+    dealer = Dealer.objects.filter(id=dealer_id).first() if dealer_id else None
 
-        category = get_object_or_404(Category, id=category_id)
-        dealer = Dealer.objects.filter(id=dealer_id).first() if dealer_id else None
+    # image optional
+    image = request.FILES.get("image") or None
 
-        # image optional
-        image = request.FILES.get("image") or None
+    FoodItem.objects.create(
+        name=request.POST.get("name"),
+        description=request.POST.get("description"),
+        price=request.POST.get("price"),
+        category=category,
+        dealer=dealer,
+        image=image
+    )
 
-        FoodItem.objects.create(
-            name=request.POST.get("name"),
-            description=request.POST.get("description"),
-            price=request.POST.get("price"),
-            category=category,
-            dealer=dealer,
-            image=image
-        )
-
-        return redirect("fooditem_list")
-
-    return render(request, "fooditem_form.html", {
-        "categories": Category.objects.all(),
-        "dealers": Dealer.objects.all()
-    })
+    return redirect("fooditem_list")
 
 
 @manager_required
@@ -331,13 +348,20 @@ def create_order(request):
 
     customers = Customer.objects.all()
     food_items = FoodItem.objects.all()
+    
 
     if request.method == "POST":
 
         customer = get_object_or_404(Customer, id=request.POST.get("customer"))
         order = Order.objects.create(customer=customer)
+        
+        food_ids = request.POST.getlist("food_item[]")
+        quantities = request.POST.getlist("quantity[]")
 
-        for fid, qty in zip(request.POST.getlist("food_item"), request.POST.getlist("quantity")):
+        for fid, qty in zip(food_ids, quantities):
+
+            if not fid or not qty:
+                continue
 
             food = get_object_or_404(FoodItem, id=fid)
 
@@ -346,7 +370,12 @@ def create_order(request):
                 order.delete()
                 return redirect("order_list")
 
-            OrderItem.objects.create(order=order, food_item=food, quantity=int(qty))
+            OrderItem.objects.create(
+                order=order,
+                food_item=food,
+                quantity=int(qty)
+            )
+
             food.quantity -= int(qty)
             food.save()
 
@@ -357,7 +386,6 @@ def create_order(request):
         "food_items": food_items
     })
 
-
 @manager_required
 def order_edit(request, pk):
 
@@ -365,26 +393,50 @@ def order_edit(request, pk):
 
     if request.method == "POST":
 
-        customer_id = request.POST.get("customer")
-        food_item_id = request.POST.get("food_item")
-        quantity = int(request.POST.get("quantity", 1))
+        # only update if value exists
+        if request.POST.get("customer"):
+            order.customer_id = request.POST.get("customer")
 
-        order.customer_id = customer_id
+        if request.POST.get("status"):
+            order.status = request.POST.get("status")
+
         order.save()
 
-        order_item = order.items.first()
+        food_item_id = request.POST.get("food_item")
+        quantity = request.POST.get("quantity")
 
-        if order_item:
-            order_item.food_item_id = food_item_id
-            order_item.quantity = quantity
-            order_item.save()
-        else:
-            OrderItem.objects.create(order=order, food_item_id=food_item_id, quantity=quantity)
+        if food_item_id and quantity:
+            quantity = int(quantity)
+
+            order_item = order.items.first()
+
+            if order_item:
+                order_item.food_item_id = food_item_id
+                order_item.quantity = quantity
+                order_item.save()
+
+            else:
+                OrderItem.objects.create(
+                    order=order,
+                    food_item_id=food_item_id,
+                    quantity=quantity
+                )
 
         return redirect("order_detail", pk=order.pk)
 
     return render(request, "order_edit.html", {"order": order})
+@manager_required
+def update_order_status(request, pk):
+    order = get_object_or_404(Order, pk=pk)
 
+    if request.method == "POST":
+        status = request.POST.get("status")
+
+        if status:   # 🔥 VERY IMPORTANT
+            order.status = status
+            order.save()
+
+    return redirect("order_list")
 
 @manager_required
 def order_delete(request, pk):

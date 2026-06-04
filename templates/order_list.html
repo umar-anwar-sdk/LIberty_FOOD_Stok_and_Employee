@@ -4,112 +4,127 @@
 {% block content %}
 <div class="main-panel">
 
-    <!-- Premium Header -->
-    <div class="card border-0 shadow-lg rounded-4 overflow-hidden mb-4">
+  <!-- Premium Header -->
+  <div class="card border-0 shadow-lg rounded-4 overflow-hidden mb-4">
 
-        <div class="p-4 text-white"
-            style="background: linear-gradient(135deg, #1e3c72, #2a5298); margin-top: 50px;">
+    <div class="p-4 text-white" style="background: linear-gradient(135deg, #1e3c72, #2a5298); ">
 
-            <div class="d-flex justify-content-between align-items-center flex-wrap">
+      <div class="d-flex justify-content-between align-items-center flex-wrap">
 
-                <div>
-                    <h2 class="fw-bold mb-1">
-                        🛒 Orders
-                    </h2>
+        <div>
+          <h2 class="fw-bold mb-1">
+            🛒 Orders
+          </h2>
 
-                    <p class="mb-0 opacity-75">
-                        Manage and monitor all customer orders
-                    </p>
-                </div>
-
-            </div>
-
+          <p class="mb-0 opacity-75">
+            Manage and monitor all customer orders
+          </p>
         </div>
+
+      </div>
+
     </div>
+  </div>
 
-    <div class="row">
-      <div class="col-md-12 grid-margin stretch-card">
-        <div class="card">
-          <div class="card-body">
+  <div class="row">
+    <div class="col-md-12 grid-margin stretch-card">
+      <div class="card">
+        <div class="card-body">
 
-            
+          <div class="table-responsive">
+            <table id="orderTable" class="display table table-striped table-hover table-bordered align-middle w-100">
 
-            <div class="table-responsive">
-              <table id="orderTable" class="display table table-striped table-hover table-bordered align-middle w-100">
+              <thead class="table-dark">
+                <tr>
+                  <th>Order ID</th>
+                  <th>Customer</th>
+                  <th>Order Date</th>
+                  <th>Status</th> <!-- ✅ NEW COLUMN -->
+                  <th>Items</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
 
-                <thead class="table-dark">
-                  <tr>
-                    <th>Order ID</th>
-                    <th>Customer</th>
-                    <th>Order Date</th>
-                    <th>Items</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
+              <tbody>
+                {% for order in orders %}
+                <tr>
+                  <td>{{ order.id }}</td>
 
-                <tbody>
-                  {% for order in orders %}
-                  <tr>
-                    <td>{{ order.id }}</td>
-                    <td>{{ order.customer.name }}</td>
-                    <td>{{ order.order_date|date:"d M Y H:i" }}</td>
+                  <td>{{ order.customer.name }}</td>
 
-                    <td>
-                      <ul class="mb-0">
-                        {% for item in order.items.all %}
-                          <li>{{ item.food_item.name }} - {{ item.quantity }}</li>
-                        {% empty %}
-                          <li>No items</li>
-                        {% endfor %}
-                      </ul>
-                    </td>
+                  <td>{{ order.order_date|date:"d M Y H:i" }}</td>
 
-                    <td>
-                      <a href="{% url 'order_detail' order.id %}"
-                         class="btn btn-sm btn-info">
+                  <!-- ✅ STATUS DROPDOWN -->
+                  <td>
+                    <form method="post" action="{% url 'update_order_status' order.id %}">
+                      {% csrf_token %}
 
-                         View
-                      </a>
+                      <select name="status" class="form-select form-select-sm" onchange="this.form.submit()">
 
-                      <a href="{% url 'order_edit' order.id %}"
-                         class="btn btn-sm btn-warning">
+                        <option value="Pending" {% if order.status == "Pending" %}selected{% endif %}>
+                          Pending
+                        </option>
 
-                         Edit
-                      </a>
+                        <option value="Completed" {% if order.status == "Completed" %}selected{% endif %}>
+                          Completed
+                        </option>
 
-                      <form action="{% url 'order_delete' order.id %}"
-                            method="post"
-                            style="display:inline;">
+                        <option value="Cancelled" {% if order.status == "Cancelled" %}selected{% endif %}>
+                          Cancelled
+                        </option>
 
-                        {% csrf_token %}
+                      </select>
+                    </form>
+                  </td>
 
-                        <button type="submit"
-                                class="btn btn-sm btn-danger"
-                                onclick="return confirm('Are you sure you want to delete this order?');">
+                  <td>
+                    <ul class="mb-0">
+                      {% for item in order.items.all %}
+                      <li>{{ item.food_item.name }} - {{ item.quantity }}</li>
+                      {% empty %}
+                      <li>No items</li>
+                      {% endfor %}
+                    </ul>
+                  </td>
 
-                          Delete
-                        </button>
-                        
-                      </form>
-                    </td>
-                  </tr>
+                  <td>
+                    <a href="{% url 'order_detail' order.id %}" class="btn btn-sm btn-info">
+                      View
+                    </a>
 
-                  {% empty %}
-                  <tr>
-                    <td colspan="5" class="text-center text-muted">
-                        No orders found.
-                    </td>
-                  </tr>
-                  {% endfor %}
-                </tbody>
+                    <a href="{% url 'order_edit' order.id %}" class="btn btn-sm btn-warning">
+                      Edit
+                    </a>
 
-              </table>
-            </div>
+                    <form action="{% url 'order_delete' order.id %}" method="post" style="display:inline;">
 
+                      {% csrf_token %}
+
+                      <button type="submit" class="btn btn-sm btn-danger"
+                        onclick="return confirm('Are you sure you want to delete this order?');">
+                        Delete
+                      </button>
+
+                    </form>
+                  </td>
+                </tr>
+
+                {% empty %}
+                <tr>
+                  <td colspan="6" class="text-center text-muted">
+                    No orders found.
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+
+            </table>
           </div>
+
         </div>
       </div>
     </div>
+  </div>
 
 </div>
 {% endblock %}

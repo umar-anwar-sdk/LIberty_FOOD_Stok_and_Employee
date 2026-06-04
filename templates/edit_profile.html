@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="container mt-5">
+
+    <div class="card shadow-lg p-4 rounded-4">
+
+        <h3 class="mb-4">Edit Profile</h3>
+
+        <form method="POST" enctype="multipart/form-data">
+            {% csrf_token %}
+
+            <!-- First Name -->
+            <div class="mb-3">
+                <label>First Name</label>
+                <input type="text" name="first_name" value="{{ request.user.first_name }}" class="form-control">
+            </div>
+
+            <!-- Last Name -->
+            <div class="mb-3">
+                <label>Last Name</label>
+                <input type="text" name="last_name" value="{{ request.user.last_name }}" class="form-control">
+            </div>
+            <div class="mb-3">
+                <label>Email</label>
+                <input type="email" name="email" value="{{ request.user.email }}" class="form-control">
+            </div>
+
+            <!-- Phone -->
+            <div class="mb-3">
+                <label>Phone</label>
+                <input type="text" name="phone" value="{{ request.user.phone }}" class="form-control">
+            </div>
+
+            <!-- Profile Image -->
+            <div class="mb-3">
+                <label>Profile Image</label>
+
+                {% if request.user.profile_image %}
+                <div class="mb-2">
+                    <img src="{{ request.user.profile_image.url }}" width="80" height="80" class="rounded-circle">
+                </div>
+                {% endif %}
+
+                <input type="file" name="profile_image" class="form-control">
+            </div>
+
+            <!-- Role (READ ONLY) -->
+            <div class="mb-3">
+                <label>Role</label>
+                <input type="text" value="{{ request.user.role }}" class="form-control" readonly>
+            </div>
+
+            <button type="submit" class="btn btn-success">
+                Update Profile
+            </button>
+
+        </form>
+
+    </div>
+
+</div>
+
+{% endblock %}

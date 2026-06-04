@@ -32,7 +32,7 @@ class Dealer(models.Model):
 class FoodItem(models.Model):
     name = models.CharField(max_length=100)
     description = models.TextField()
-    price = models.DecimalField(max_digits=8, decimal_places=2, null=True, blank=True)
+    price = models.DecimalField(max_digits=8, decimal_places=2, blank=True)
 
     category = models.ForeignKey(Category, on_delete=models.CASCADE)
     dealer = models.ForeignKey(Dealer, on_delete=models.SET_NULL, null=True, blank=True)
@@ -40,6 +40,9 @@ class FoodItem(models.Model):
     image = models.ImageField(upload_to="food_images/", null=True, blank=True)
 
     quantity = models.PositiveIntegerField(default=0)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    total_sold = models.PositiveIntegerField(default=0)
 
     def __str__(self):
         return f"{self.name} (Stock: {self.quantity})"

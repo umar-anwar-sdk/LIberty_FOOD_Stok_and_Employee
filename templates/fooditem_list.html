@@ -5,48 +5,46 @@
 <!-- Premium Header -->
 <div class="card border-0 shadow-lg rounded-4 overflow-hidden">
 
-    <div class="p-4 text-white"
-        style="background: linear-gradient(135deg, #1e3c72, #2a5298); margin-top: 70px;">
+     <div class="p-4 text-white" style="background: linear-gradient(135deg, #1e3c72, #2a5298);">
 
-        <div class="d-flex justify-content-between align-items-center flex-wrap">
+          <div class="d-flex justify-content-between align-items-center flex-wrap">
 
-            <div>
-                <h2 class="fw-bold mb-1">
-                    🍔 Food Items
-                </h2>
+               <div>
+                    <h2 class="fw-bold mb-1">
+                         🍔 Food Items
+                    </h2>
 
-                <p class="mb-0 opacity-75">
-                    Manage your menu, pricing and stock items
-                </p>
-            </div>
-                 <div class="d-flex justify-content-between align-items-center mb-3">
+                    <p class="mb-0 opacity-75">
+                         Manage your menu, pricing and stock items
+                    </p>
+               </div>
+               <div class="d-flex justify-content-between align-items-center ">
 
-          <a href="{% url 'fooditem_add' %}"
-             class="btn text-white shadow-sm px-4 rounded-pill"
-             style="background: linear-gradient(135deg, #1e3c72, #2a5298);">
-               ➕ Add Food Item
-          </a>
+                    <a href="{% url 'fooditem_add' %}" class="btn text-white shadow-sm px-4 rounded-pill"
+                         style="background: linear-gradient(135deg, #1e3c72, #2a5298);">
+                         ➕ Add Food Item
+                    </a>
+
+               </div>
+
+          </div>
 
      </div>
-
-        </div>
-
-    </div>
 </div>
 
-<div class="container-fluid">
+<div class="container-fluid" style="margin-top: 20px;">
 
      <div class="card border-0 shadow-lg rounded-4">
           <div class="card-body">
 
-               <div class="table-responsive">
+               <div class="table-responsive" style="overflow-x: unset;">
 
                     <table id="foodTable"
-                           class="table table-hover table-bordered align-middle w-100">
+                         class="table table-hover align-middle bg-white shadow-sm rounded-4 overflow-hidden">
 
-                         <thead class="table-dark">
-                              <tr>
-                                   <th style="width:70px;">Image</th>
+                         <thead>
+                              <tr style="background: #1e3c72; color: white;">
+                                   <th style="width:70px; padding:14px;">Image</th>
                                    <th>Name</th>
                                    <th>Category</th>
                                    <th>Dealer</th>
@@ -56,48 +54,53 @@
                          </thead>
 
                          <tbody>
-                              {% for item in items %}
-                              <tr>
 
-                                   <td>
+                              {% for item in items %}
+                              <tr style="border-bottom: 1px solid #e5e7eb;">
+
+                                   <td style="padding:12px;">
                                         {% if item.image %}
-                                        <img src="{{ item.image.url }}"
-                                             class="food-img shadow-sm"
-                                             alt="{{ item.name }}">
+                                        <img src="{{ item.image.url }}" style="width:55px; height:55px; object-fit:cover; border-radius:10px;
+                      border:1px solid #ddd;">
                                         {% else %}
                                         <span class="text-muted">No Image</span>
                                         {% endif %}
                                    </td>
 
-                                   <td class="fw-semibold">{{ item.name }}</td>
+                                   <td class="fw-semibold text-dark">
+                                        🍔 {{ item.name }}
+                                   </td>
 
                                    <td>
-                                        <span class="badge bg-primary rounded-pill px-3 py-2">
+                                        <span class="badge rounded-pill px-3 py-2"
+                                             style="background:#e0f2fe; color:#0369a1;">
                                              {{ item.category.name }}
                                         </span>
                                    </td>
 
-                                   <td>{{ item.dealer }}</td>
+                                   <td class="text-secondary">
+                                        {{ item.dealer }}
+                                   </td>
 
-                                   <td class="text-success fw-bold">
-                                        {{ item.price }}Rs.
+                                   <td class="fw-bold text-success">
+                                        {{ item.price }} Rs
                                    </td>
 
                                    <td class="text-center">
 
                                         <a href="{% url 'fooditem_detail' item.id %}"
-                                           class="btn btn-info btn-sm rounded-pill px-3">
-                                           🔍
+                                             class="btn btn-sm btn-outline-primary rounded-pill px-3">
+                                             🔍
                                         </a>
 
                                         <a href="{% url 'fooditem_edit' item.id %}"
-                                           class="btn btn-warning btn-sm rounded-pill px-3">
-                                           ✏️
+                                             class="btn btn-sm btn-outline-warning rounded-pill px-3">
+                                             ✏️
                                         </a>
 
                                         <a href="{% url 'fooditem_delete' item.id %}"
-                                           class="btn btn-danger btn-sm rounded-pill px-3">
-                                           🗑️
+                                             class="btn btn-sm btn-outline-danger rounded-pill px-3">
+                                             🗑️
                                         </a>
 
                                    </td>
@@ -105,12 +108,12 @@
                               </tr>
                               {% empty %}
                               <tr>
-                                   <td colspan="6"
-                                       class="text-center text-muted py-4">
+                                   <td colspan="6" class="text-center text-muted py-4">
                                         🚫 No food items found
                                    </td>
                               </tr>
                               {% endfor %}
+
                          </tbody>
 
                     </table>
@@ -133,30 +136,30 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 
 <script>
-$(document).ready(function () {
+     $(document).ready(function () {
 
-    $('#foodTable').DataTable({
+          $('#foodTable').DataTable({
 
-        responsive: true,
-        autoWidth: false,
+               responsive: true,
+               autoWidth: false,
 
-        dom:
-            "<'row mb-3'<'col-md-6'l><'col-md-6 text-end'Bf>>" +
-            "<'row'<'col-12'tr>>" +
-            "<'row mt-2'<'col-md-5'i><'col-md-7'p>>",
+               dom:
+                    "<'row mb-3'<'col-md-6'l><'col-md-6 text-end'Bf>>" +
+                    "<'row'<'col-12'tr>>" +
+                    "<'row mt-2'<'col-md-5'i><'col-md-7'p>>",
 
-        buttons: [
-            { extend: 'copy', className: 'btn btn-sm btn-secondary' },
-            { extend: 'csv', className: 'btn btn-sm btn-success' },
-            { extend: 'excel', className: 'btn btn-sm btn-primary' }
-        ],
+               buttons: [
+                    { extend: 'copy', className: 'btn btn-sm btn-secondary' },
+                    { extend: 'csv', className: 'btn btn-sm btn-success' },
+                    { extend: 'excel', className: 'btn btn-sm btn-primary' }
+               ],
 
-        pageLength: 5,
-        lengthMenu: [5, 10, 25, 50]
+               pageLength: 5,
+               lengthMenu: [5, 10, 25, 50]
 
-    });
+          });
 
-});
+     });
 </script>
 
 {% endblock %}

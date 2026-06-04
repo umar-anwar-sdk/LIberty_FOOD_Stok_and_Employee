@@ -5,7 +5,7 @@
 <div class="card border-0 shadow-lg rounded-4 overflow-hidden">
 
     <div class="p-4 text-white"
-        style="background: linear-gradient(135deg, #1e3c72, #2a5298); margin-top: 70px;">
+        style="background: linear-gradient(135deg, #1e3c72, #2a5298); ">
 
         <div class="d-flex justify-content-between align-items-center flex-wrap">
 
@@ -23,107 +23,128 @@
 
     </div>
 </div>
+<div class="container mt-4">
 
-<div class="container mt-3">
+    <div class="row g-4">
 
-    <div class="card shadow-lg border-0 p-4">
+        <!-- MAIN FORM -->
+        <div class="col-12">
 
-        <form method="post" id="orderForm">
-            {% csrf_token %}
+            <div class="card border-0 shadow-sm rounded-4 p-4">
 
-            <div class="mb-4">
-                <label class="form-label fw-bold">Customer</label>
+                <form method="post" id="orderForm">
+                    {% csrf_token %}
 
-                <select name="customer" class="form-select" required>
-                    <option value="">-- Select Customer --</option>
+                    <!-- CUSTOMER -->
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold text-secondary">Customer</label>
+                        <select name="customer" class="form-select form-select-lg rounded-3" required>
+                            <option value="">Select Customer</option>
+                            {% for c in customers %}
+                                <option value="{{ c.id }}">{{ c.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
 
-                    {% for c in customers %}
-                    <option value="{{ c.id }}">{{ c.name }}</option>
-                    {% endfor %}
+                    <hr class="opacity-25">
 
-                </select>
-            </div>
+                    <!-- HEADER ROW -->
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="fw-bold mb-0">🍽 Order Items</h5>
 
-            <hr>
+                        <button type="button"
+                                class="btn btn-primary btn-sm rounded-3 px-3"
+                                onclick="addProduct()">
+                            ➕ Add Item
+                        </button>
+                    </div>
 
-            <div id="productContainer">
+                    <!-- ITEMS -->
+                    <div id="productContainer">
 
-                <div class="product-group card border p-3 mb-3 shadow-sm">
+                        <div class="product-group border rounded-4 p-3 mb-3 bg-light">
 
-                    <h6 class="text-muted mb-3">Food Item</h6>
+                            <div class="d-flex justify-content-between mb-2">
+                                <small class="text-muted fw-semibold">Item #1</small>
+                            </div>
 
-                    <select name="food_item" class="form-select food-item mb-3"
-                        onchange="updatePrice(this)" required>
+                            <select name="food_item[]"
+                                    class="form-select food-item rounded-3 mb-3"
+                                    onchange="updatePrice(this)" required>
 
-                        <option value="">-- Select Food Item --</option>
+                                <option value="">Select Food Item</option>
 
-                        {% for f in food_items %}
+                                {% for f in food_items %}
+                                    <option value="{{ f.id }}"
+                                            data-price="{{ f.price }}"
+                                            data-stock="{{ f.quantity }}">
+                                        {{ f.name }} • Stock {{ f.quantity }}
+                                    </option>
+                                {% endfor %}
 
-                        <option value="{{ f.id }}" data-price="{{ f.price }}" data-stock="{{ f.quantity }}">
+                            </select>
 
-                            {{ f.name }} (Available: {{ f.quantity }})
+                            <div class="row g-3">
 
-                        </option>
-                        {% endfor %}
+                                <div class="col-md-4">
+                                    <label class="form-label text-muted">Qty</label>
+                                    <input type="number"
+                                           name="quantity[]"
+                                           class="form-control quantity rounded-3"
+                                           min="1"
+                                           value="1"
+                                           oninput="calculateTotal(this)"
+                                           required>
+                                </div>
 
-                    </select>
+                                <div class="col-md-4">
+                                    <label class="form-label text-muted">Price</label>
+                                    <input type="text"
+                                           class="form-control unit-price bg-white rounded-3"
+                                           readonly>
+                                </div>
 
-                    <div class="row">
+                                <div class="col-md-4">
+                                    <label class="form-label text-muted">Total</label>
+                                    <input type="text"
+                                           class="form-control total-price bg-white fw-bold text-success rounded-3"
+                                           readonly>
+                                </div>
 
-                        <div class="col-md-4 mb-3">
-                            <label class="fw-bold">Quantity</label>
-                            <input type="number" name="quantity" class="form-control quantity"
-                                min="1" value="1" oninput="calculateTotal(this)" required>
-                        </div>
+                            </div>
 
-                        <div class="col-md-4 mb-3">
-                            <label class="fw-bold">Price / Unit</label>
-                            <input type="text" class="form-control unit-price bg-light" readonly>
-                        </div>
+                            <div class="text-end mt-3">
+                                <button type="button"
+                                        class="btn btn-outline-danger btn-sm rounded-3"
+                                        onclick="removeProduct(this)">
+                                    Remove
+                                </button>
+                            </div>
 
-                        <div class="col-md-4 mb-3">
-                            <label class="fw-bold">Total</label>
-                            <input type="text" class="form-control total-price bg-light fw-bold text-success" readonly>
                         </div>
 
                     </div>
 
-                    <button type="button" class="btn btn-outline-danger btn-sm"
-                        onclick="removeProduct(this)">
+                    <!-- ACTIONS -->
+                    <div class="d-flex justify-content-between mt-4">
 
-                        🗑 Remove
+                        <a href="{% url 'order_list' %}"
+                           class="btn btn-outline-secondary rounded-3 px-4">
+                            ⬅ Back
+                        </a>
 
-                    </button>
+                        <button type="submit"
+                                class="btn btn-success rounded-3 px-4">
+                            ✅ Place Order
+                        </button>
 
-                </div>
+                    </div>
 
-            </div>
-
-            <button type="button" class="btn btn-primary mt-2" onclick="addProduct()">
-
-                ➕ Add Another Product
-
-            </button>
-
-            <hr>
-
-            <div class="d-flex justify-content-between mt-4">
-
-                <a href="{% url 'order_list' %}" class="btn btn-outline-secondary">
-
-                    ⬅ Back
-
-                </a>
-
-                <button type="submit" class="btn btn-success">
-
-                    ✅ Create Order
-
-                </button>
+                </form>
 
             </div>
 
-        </form>
+        </div>
 
     </div>
 
@@ -157,20 +178,22 @@
     }
 
     function addProduct() {
+    const container = document.getElementById('productContainer');
 
-        const container = document.getElementById('productContainer');
+    const first = container.children[0];
+    const newGroup = first.cloneNode(true);
 
-        const newGroup = container.children[0].cloneNode(true);
+    // reset values properly
+    newGroup.querySelectorAll('input, select').forEach(el => {
+        if (el.tagName === "SELECT") {
+            el.selectedIndex = 0;
+        } else {
+            el.value = "";
+        }
+    });
 
-        newGroup.querySelector('.food-item').selectedIndex = 0;
-        newGroup.querySelector('.quantity').value = 1;
-        newGroup.querySelector('.unit-price').value = '';
-        newGroup.querySelector('.total-price').value = '';
-
-        container.appendChild(newGroup);
-
-    }
-
+    container.appendChild(newGroup);
+}
     function removeProduct(button) {
 
         const container = document.getElementById('productContainer');

@@ -120,19 +120,27 @@ def employee_detail(request, employee_id):
     today = now().date()
     month_start = today.replace(day=1)
     total_days_in_month = calendar.monthrange(today.year, today.month)[1]
-    monthly_salary = employee.base_salary
 
-    # join_date handle
     join_date = employee.join_date
     if hasattr(join_date, "date"):
         join_date = join_date.date()
 
-    if join_date and join_date >= month_start:
-        per_day_salary = employee.base_salary / Decimal(30)
-        worked_days = total_days_in_month - join_date.day + 1
-        monthly_salary = per_day_salary * Decimal(worked_days)
+    # ---------------- SALARY CALCULATION ----------------
+    monthly_salary = employee.base_salary
 
-    # salary record
+    # If employee joined in current month
+    if join_date and join_date >= month_start:
+
+        per_day_salary = employee.base_salary / Decimal(total_days_in_month)
+
+        remaining_days = (total_days_in_month - join_date.day) + 1
+
+        if remaining_days < 0:
+            remaining_days = 0
+
+        monthly_salary = per_day_salary * Decimal(remaining_days)
+
+    # ---------------- SALARY RECORD ----------------
     salary_record, created = EmployeeSalary.objects.get_or_create(
         employee=employee,
         month=month_start,
@@ -143,65 +151,76 @@ def employee_detail(request, employee_id):
         },
     )
 
-    if request.method == "POST":
-        if "action" in request.POST:  # transaction form
-            action = request.POST.get("action")
-            try:
-                amount = Decimal(request.POST.get("amount", "0"))
-            except (TypeError, ValueError):
-                amount = Decimal("0")
-            reason = request.POST.get("reason", "")
+    # Always sync updated salary
+    salary_record.total_salary = monthly_salary
 
-            if amount <= 0:
-                messages.error(request, "Invalid amount entered.")
-                return redirect("employee_detail", employee_id=employee.id)
+    # Only reset if no transactions exist
+    if not salary_record.transactions.exists():
+        salary_record.remaining_salary = monthly_salary
 
-            if action == "taken":
-                if salary_record.remaining_salary >= amount:
-                    salary_record.remaining_salary -= amount
-                else:
-                    extra = amount - salary_record.remaining_salary
-                    salary_record.remaining_salary = Decimal("0")
-                    salary_record.advance_amount += extra
+    salary_record.save()
 
-                EmployeeTransaction.objects.create(
-                    employee=employee,
-                    salary_record=salary_record,
-                    transaction_type="taken",
-                    amount=amount,
-                    reason=reason,
-                )
+    # ---------------- TRANSACTIONS ----------------
+    if request.method == "POST" and "action" in request.POST:
+        action = request.POST.get("action")
 
-            elif action == "deposit":
-                if salary_record.advance_amount > 0:
-                    if amount <= salary_record.advance_amount:
-                        salary_record.advance_amount -= amount
-                    else:
-                        extra = amount - salary_record.advance_amount
-                        salary_record.advance_amount = Decimal("0")
-                        salary_record.remaining_salary += extra
-                else:
-                    salary_record.remaining_salary += amount
+        try:
+            amount = Decimal(request.POST.get("amount", "0"))
+        except:
+            amount = Decimal("0")
 
-                EmployeeTransaction.objects.create(
-                    employee=employee,
-                    salary_record=salary_record,
-                    transaction_type="deposit",
-                    amount=amount,
-                    reason=reason,
-                )
+        reason = request.POST.get("reason", "")
 
-            salary_record.save()
+        if amount <= 0:
+            messages.error(request, "Invalid amount")
             return redirect("employee_detail", employee_id=employee.id)
 
+        # CASH TAKEN
+        if action == "taken":
+            if salary_record.remaining_salary >= amount:
+                salary_record.remaining_salary -= amount
+            else:
+                extra = amount - salary_record.remaining_salary
+                salary_record.remaining_salary = Decimal("0")
+                salary_record.advance_amount += extra
+
+            EmployeeTransaction.objects.create(
+                employee=employee,
+                salary_record=salary_record,
+                transaction_type="taken",
+                amount=amount,
+                reason=reason,
+            )
+
+        # CASH DEPOSIT
+        elif action == "deposit":
+            if salary_record.advance_amount > 0:
+                if amount <= salary_record.advance_amount:
+                    salary_record.advance_amount -= amount
+                else:
+                    extra = amount - salary_record.advance_amount
+                    salary_record.advance_amount = Decimal("0")
+                    salary_record.remaining_salary += extra
+            else:
+                salary_record.remaining_salary += amount
+
+            EmployeeTransaction.objects.create(
+                employee=employee,
+                salary_record=salary_record,
+                transaction_type="deposit",
+                amount=amount,
+                reason=reason,
+            )
+
+        salary_record.save()
+        return redirect("employee_detail", employee_id=employee.id)
+
+    # ---------------- DATA ----------------
     transactions = salary_record.transactions.all().order_by("-date")
 
-    total_taken = EmployeeTransaction.objects.filter(
-        salary_record=salary_record, transaction_type="taken"
-    ).aggregate(total=Sum("amount"))["total"] or Decimal("0")
-
     total_deposit = EmployeeTransaction.objects.filter(
-        salary_record=salary_record, transaction_type="deposit"
+        salary_record=salary_record,
+        transaction_type="deposit"
     ).aggregate(total=Sum("amount"))["total"] or Decimal("0")
 
     summary = {

@@ -7,7 +7,7 @@
 <div class="card border-0 shadow-lg rounded-4 overflow-hidden">
 
     <div class="p-4 text-white"
-        style="background: linear-gradient(135deg, #1e3c72, #2a5298); margin-top: 70px;">
+        style="background: linear-gradient(135deg, #1e3c72, #2a5298);">
 
         <div class="d-flex justify-content-between align-items-center flex-wrap">
 
@@ -21,12 +21,13 @@
                 </p>
 
             </div>
+
             <div class="d-flex justify-content-end mt-3">
 
-              <a href="{% url 'employee_add' %}"
-                 class="btn btn-primary rounded-pill px-4 shadow-sm">
-                ➕ Add Employee
-              </a>
+                <a href="{% url 'employee_add' %}"
+                    class="btn btn-primary rounded-pill px-4 shadow-sm">
+                    ➕ Add Employee
+                </a>
 
             </div>
 
@@ -35,78 +36,132 @@
     </div>
 </div>
 
-<div class="main-panel" style="width: 100%;">
-  <div class="content-wrapper">
+<div class="main-panel" style="width: 100%; margin-top: 20px;">
+    <div class="content-wrapper">
 
-    <div class="row">
-      <div class="col-md-12 grid-margin stretch-card">
+        <div class="row">
+            <div class="col-md-12 grid-margin stretch-card">
 
-        <div class="card border-0 shadow-lg rounded-4">
+                <div class="card border-0 shadow-lg rounded-4">
 
-          <div class="card-body p-4">
+                    <div class="card-body p-4">
 
-            <div class="table-responsive">
+                        <div class="table-responsive" style="overflow: unset;">
 
-              <table class="table table-hover align-middle">
+                            <table id="employeeTable" class="table table-hover align-middle">
 
-                <thead class="table-dark">
-                  <tr>
-                    <th>Name</th>
-                    <th>Post</th>
-                    <th>Salary</th>
-                    <th class="text-center">Actions</th>
-                  </tr>
-                </thead>
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th>Name</th>
+                                        <th>Post</th>
+                                        <th>Salary</th>
+                                        <th class="text-center">Actions</th>
+                                    </tr>
+                                </thead>
 
-                <tbody>
-                  {% for e in employees %}
-                  <tr>
+                                <tbody>
+                                    {% for e in employees %}
+                                    <tr>
 
-                    <td class="fw-semibold">
-                      {{ e.first_name }} {{ e.last_name }}
-                    </td>
+                                        <td class="fw-semibold">
+                                            {{ e.first_name }} {{ e.last_name }}
+                                        </td>
 
-                    <td>
-                      <span class="badge bg-secondary">
-                        {{ e.position }}
-                      </span>
-                    </td>
+                                        <td>
+                                            <span class="badge bg-secondary">
+                                                {{ e.position }}
+                                            </span>
+                                        </td>
 
-                    <td class="text-success fw-bold">
-                      {{ e.base_salary }}
-                    </td>
+                                        <td class="text-success fw-bold">
+                                            {{ e.base_salary }}
+                                        </td>
 
-                    <td class="text-center">
-                      <a href="{% url 'employee_detail' e.id %}"
-                         class="btn btn-sm btn-info rounded-pill px-3">
-                        View
-                      </a>
-                    </td>
+                                        <td class="text-center">
+                                            <a href="{% url 'employee_detail' e.id %}"
+                                                class="btn btn-sm btn-info rounded-pill px-3">
+                                                View
+                                            </a>
+                                        </td>
 
-                  </tr>
-                  {% empty %}
-                  <tr>
-                    <td colspan="4" class="text-center text-muted py-4">
-                      No employees found.
-                    </td>
-                  </tr>
-                  {% endfor %}
-                </tbody>
+                                    </tr>
+                                    {% empty %}
+                                    <tr>
+                                        <td colspan="4" class="text-center text-muted py-4">
+                                            No employees found.
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
 
-              </table>
+                            </table>
+
+                        </div>
+
+                    </div>
+
+                </div>
 
             </div>
-
-
-
-          </div>
-
         </div>
 
-      </div>
     </div>
-
-  </div>
 </div>
+
+<!-- DataTables -->
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+<link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.2/css/buttons.dataTables.min.css">
+
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+
+<script src="https://cdn.datatables.net/buttons/2.4.2/js/dataTables.buttons.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.html5.min.js"></script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+
+<!-- PDF Export -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
+
+<script>
+$(document).ready(function () {
+
+    $('#employeeTable').DataTable({
+
+        responsive: true,
+        autoWidth: false,
+
+        dom:
+            "<'row mb-3'<'col-md-6'l><'col-md-6 text-end'Bf>>" +
+            "<'row'<'col-12'tr>>" +
+            "<'row mt-2'<'col-md-5'i><'col-md-7'p>>",
+
+        buttons: [
+            {
+                extend: 'copy',
+                className: 'btn btn-sm btn-secondary'
+            },
+            {
+                extend: 'csv',
+                className: 'btn btn-sm btn-success'
+            },
+            {
+                extend: 'excel',
+                className: 'btn btn-sm btn-primary'
+            },
+            {
+                extend: 'pdf',
+                className: 'btn btn-sm btn-danger'
+            }
+        ],
+
+        pageLength: 5,
+        lengthMenu: [5, 10, 25, 50]
+
+    });
+
+});
+</script>
 
 {% endblock %}

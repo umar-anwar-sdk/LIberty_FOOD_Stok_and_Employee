@@ -3,416 +3,475 @@
 <!-- <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"> -->
 {% block content %}
 
-<div class="content-wrapper p-4" style="overflow: hidden;">
+<div class="content-wrapper">
 
 
     <!-- DASHBOARD CARDS -->
-    <div class="row g-3 mt-4">
+    <div class="row g-3">
 
         <!-- Employees -->
-        <div class="col-md-3" style="margin-top: 5px;">
+        <div class="col-md-3">
             <div class="card shadow-sm border-0 text-center">
                 <div class="card-body">
-                    <h6 class="text-muted text-uppercase">Total Employees</h6>
-                    <h2 class="text-primary">{{ total_employees }}</h2>
-                    <!-- <i class="fas fa-users fa-2x text-primary"></i> -->
+                    <h6 class="text-uppercase" style="font-size: larger; font-weight: bolder;">Total Employees</h6>
+                    <h2 class=""><i class="fas fa-users text-primary"></i> {{ total_employees }}</h2>
+
                 </div>
             </div>
         </div>
 
         <!-- Food Items -->
-        <div class="col-md-3" style="margin-top: 5px;">
+        <div class="col-md-3">
             <div class="card shadow-sm border-0 text-center">
                 <div class="card-body">
-                    <h6 class="text-muted text-uppercase">Food Items</h6>
-                    <h2 class="text-success">{{ total_food_items }}</h2>
-                    <i class="fas fa-hamburger fa-2x text-success"></i>
+                    <h6 class="text-uppercase" style="font-size: larger; font-weight: bolder;">Food Items</h6>
+                    <h2 class=""><i class="fas fa-hamburger  text-success"></i> {{ total_food_items }}</h2>
+
                 </div>
             </div>
         </div>
 
         <!-- Stock -->
-        <div class="col-md-3" style="margin-top: 5px;">
+        <div class="col-md-3">
             <div class="card shadow-sm border-0 text-center">
                 <div class="card-body">
-                    <h6 class="text-muted text-uppercase">Total Stock</h6>
-                    <h2 class="text-warning">{{ total_stock }}</h2>
-                    <i class="fas fa-boxes fa-2x text-warning"></i>
+                    <h6 class="text-uppercase" style="font-size: larger; font-weight: bolder;">Total Stock</h6>
+                    <h2 class=""><i class="fas fa-boxes  text-warning"></i> {{ total_stock }}</h2>
+
                 </div>
             </div>
         </div>
 
         <!-- Orders -->
-        <div class="col-md-3" style="margin-top: 5px;">
+        <div class="col-md-3">
             <div class="card shadow-sm border-0 text-center">
                 <div class="card-body">
-                    <h6 class="text-muted text-uppercase">Total Orders</h6>
-                    <h2 class="text-danger">{{ total_orders }}</h2>
-                    <!-- <i class="fas fa-shopping-cart fa-2x text-danger"></i> -->
+                    <h6 class="text-uppercase" style="font-size: larger; font-weight: bolder;">Total Orders</h6>
+                    <h2 class=""><i class="fas fa-shopping-cart text-danger"></i> {{ total_orders }}</h2>
+
                 </div>
             </div>
         </div>
 
-    </div>
+        <div class="row g-3">
 
+            <!-- Employees -->
+            <div class="col-md-4">
+                <div class="card shadow-sm border-0 text-center">
+                    <div class="card-body">
+                        <h6 class="text-uppercase" style="font-size: larger; font-weight: bolder;">Total Customers</h6>
+                        <h2 class=""><i class="fas fa-users text-primary"></i> {{ customers }}</h2>
 
-
-
-    <div class="row g-3 mt-4">
-
-        <!-- Employees Overview (Big Chart) -->
-        <div class="col-md-8">
-            <div class="card shadow-sm">
-                <div class="card-body" style="height: 360px;">
-                    <h5 class="text-center">Employees Overview</h5>
-                    <canvas id="employeeJoinChart"></canvas>
+                    </div>
                 </div>
+            </div>
+
+            <!-- Food Items -->
+            <div class="col-md-4">
+                <div class="card shadow-sm border-0 text-center">
+                    <div class="card-body">
+                        <h6 class="text-uppercase" style="font-size: larger; font-weight: bolder;">Total Dealers</h6>
+                        <h2 class=""><i class="fa-solid fa-person-shelter  text-success"></i> {{ total_dealers }}</h2>
+
+                    </div>
+                </div>
+            </div>
+
+            <!-- Stock -->
+            <div class="col-md-4">
+                <div class="card shadow-sm border-0 text-center">
+                    <div class="card-body">
+                        <h6 class="text-uppercase" style="font-size: larger; font-weight: bolder;">Total Category</h6>
+                        <h2 class=""><i class="fa-solid fa-layer-group  text-warning"></i> {{ total_category }}</h2>
+
+                    </div>
+                </div>
+            </div>
+
+            <!-- Orders -->
+
+
+        </div>
+
+
+
+
+        <div class="row g-3 mt-4">
+
+            <!-- Employees Overview (Big Chart) -->
+            <div class="col-md-8">
+                <div class="card border-0 shadow-lg rounded-4 overflow-hidden">
+
+
+
+                    <!-- Body -->
+
+                    <div class="card-body bg-light">
+                        <h5 class="mb-0 fw-bold text-center">
+                            👨‍💼 Employees Overview
+                        </h5>
+                        <div style="height: 306px;">
+                            <canvas id="employeeJoinChart"></canvas>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- Orders Overview (Pie) -->
+            <div class="col-md-4">
+                <div class="card shadow-sm">
+                    <div class="card-body" style="height: 360px;">
+                        <h5 class="text-center">Orders Overview</h5>
+                        <canvas id="OrdersOverview"></canvas>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="row g-3 mt-4">
+
+            <!-- Food Stock -->
+            <div class="col-md-6">
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <h5 class="text-center">Food Stock Overview</h5>
+                        <canvas id="foodStockChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Top Selling Food -->
+            <div class="col-md-6">
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <h5 class="text-center">Top Selling Food</h5>
+                        <canvas id="topFoodChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+
+        <div class="card shadow-sm mt-4">
+            <div class="card-body">
+                <h5>Recent Orders</h5>
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Customer</th>
+                            <th>Items</th>
+                            <th>Total Price</th>
+                            <th>Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for order in recent_orders %}
+                        <tr>
+                            <td>{{ order.id }}</td>
+
+                            <!-- ✅ Customer -->
+                            <td>{{ order.customer.name }}</td>
+
+                            <!-- ✅ Items (FIXED) -->
+                            <td>
+                                {% for item in order.items.all %}
+                                {{ item.food_item.name }} (x{{ item.quantity }})<br>
+                                {% empty %}
+                                No items
+                                {% endfor %}
+                            </td>
+
+                            <!-- ✅ Total Price (FIXED) -->
+                            <td>{{ order.total_price }}</td>
+
+                            <!-- ✅ Date (FIXED) -->
+                            <td>{{ order.order_date }}</td>
+
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5">No recent orders</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
             </div>
         </div>
 
-        <!-- Orders Overview (Pie) -->
-        <div class="col-md-4">
-            <div class="card shadow-sm">
-                <div class="card-body" style="height: 360px;">
-                    <h5 class="text-center">Orders Overview</h5>
-                    <canvas id="OrdersOverview"></canvas>
-                </div>
-            </div>
-        </div>
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-    </div>
+        <script>
+            document.addEventListener("DOMContentLoaded", function () {
 
-    <div class="row g-3 mt-4">
-
-        <!-- Food Stock -->
-        <div class="col-md-6">
-            <div class="card shadow-sm">
-                <div class="card-body">
-                    <h5 class="text-center">Food Stock Overview</h5>
-                    <canvas id="foodStockChart"></canvas>
-                </div>
-            </div>
-        </div>
-
-        <!-- Top Selling Food -->
-        <div class="col-md-6">
-            <div class="card shadow-sm">
-                <div class="card-body">
-                    <h5 class="text-center">Top Selling Food</h5>
-                    <canvas id="topFoodChart"></canvas>
-                </div>
-            </div>
-        </div>
-
-    </div>
-
-
-    <div class="card shadow-sm mt-4">
-        <div class="card-body">
-            <h5>Recent Orders</h5>
-            <table class="table">
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Customer</th>
-                        <th>Items</th>
-                        <th>Total Price</th>
-                        <th>Date</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for order in recent_orders %}
-                    <tr>
-                        <td>{{ order.id }}</td>
-
-                        <!-- ✅ Customer -->
-                        <td>{{ order.customer.name }}</td>
-
-                        <!-- ✅ Items (FIXED) -->
-                        <td>
-                            {% for item in order.items.all %}
-                            {{ item.food_item.name }} (x{{ item.quantity }})<br>
-                            {% empty %}
-                            No items
-                            {% endfor %}
-                        </td>
-
-                        <!-- ✅ Total Price (FIXED) -->
-                       <td>{{ order.total_price }}Rs.</td>
-
-                        <!-- ✅ Date (FIXED) -->
-                        <td>{{ order.order_date }}</td>
-
-                    </tr>
-                    {% empty %}
-                    <tr>
-                        <td colspan="5">No recent orders</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    </div>
-
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
-    <script>
-        document.addEventListener("DOMContentLoaded", function () {
-
-            // BAR CHART (Food Stock)
-            new Chart(document.getElementById('foodStockChart'), {
-                type: 'bar',
-                data: {
-                    labels: {{ food_names| safe }},
-            datasets: [{
-                label: 'Stock Quantity',
-                data: {{ food_quantities| safe }},
-
-            backgroundColor: (context) => {
-                const ctx = context.chart.ctx;
-                const gradient = ctx.createLinearGradient(0, 0, 0, 300);
-                gradient.addColorStop(0, '#00c6ff');
-                gradient.addColorStop(1, '#0072ff');
-                return gradient;
-            },
-
-            borderRadius: 15,
-            borderSkipped: false,
-
-            barPercentage: 0.6,
-            categoryPercentage: 0.7,
-
-            hoverBackgroundColor: '#111'
-        }]
-    },
-
-            options: {
-            responsive: true,
-
-            plugins: {
-                legend: {
-                    display: true,
-                    labels: {
-                        color: '#333',
-                        font: {
-                            weight: 'bold'
-                        }
-                    }
-                },
-
-                tooltip: {
-                    backgroundColor: '#000',
-                    titleColor: '#fff',
-                    bodyColor: '#fff',
-                    padding: 12,
-                    displayColors: false
-                }
-            },
-
-            scales: {
-                x: {
-                    grid: {
-                        display: false
-                    },
-                    ticks: {
-                        color: '#444',
-                        font: {
-                            weight: '600'
-                        }
-                    }
-                },
-                y: {
-                    grid: {
-                        color: 'rgba(0,0,0,0.05)'
-                    },
-                    ticks: {
-                        color: '#444'
-                    }
-                }
-            },
-
-            animation: {
-                duration: 1400,
-                easing: 'easeOutBounce'
-            }
-        }
-});
-        const ctx = document.getElementById('employeeJoinChart').getContext('2d');
-
-        const data = {{ employee_counts| safe }};
-
-        // convert normal data into radial bars
-        const max = Math.max(...data);
-
-        new Chart(ctx, {
-            type: 'bar',
-
-            data: {
-                labels: {{ months| safe }},
-
-            datasets: [{
-                label: 'Radial Progress',
-
-                data: data,
+                // BAR CHART (Food Stock)
+                new Chart(document.getElementById('foodStockChart'), {
+                    type: 'bar',
+                    data: {
+                        labels: {{ food_names| safe }},
+                datasets: [{
+                    label: 'Stock Quantity',
+                    data: {{ food_quantities| safe }},
 
                 backgroundColor: (context) => {
-                    const value = context.raw;
-
-                    const intensity = value / max;
-
-                    return `rgba(34, 211, 238, ${0.3 + intensity})`;
+                    const ctx = context.chart.ctx;
+                    const gradient = ctx.createLinearGradient(0, 0, 0, 300);
+                    gradient.addColorStop(0, '#00c6ff');
+                    gradient.addColorStop(1, '#0072ff');
+                    return gradient;
                 },
 
-                borderRadius: 50,
+                borderRadius: 15,
                 borderSkipped: false,
 
-                // 👇 key for circular feel
-                barThickness: 10,
-                categoryPercentage: 0.8
-            }]
+                barPercentage: 0.6,
+                categoryPercentage: 0.7,
+
+                hoverBackgroundColor: '#111'
+        }]
     },
 
-            options: {
-            responsive: true,
-            maintainAspectRatio: false,
+                options: {
+                responsive: true,
 
-            indexAxis: 'y', // helps radial illusion
-
-            plugins: {
-                legend: { display: false },
-
-                tooltip: {
-                    backgroundColor: 'rgba(0,0,0,0.9)',
-                    borderColor: '#22d3ee',
-                    borderWidth: 1,
-                    titleColor: '#22d3ee',
-                    bodyColor: '#fff'
-                }
-            },
-
-            scales: {
-                x: {
-                    grid: {
-                        color: 'rgba(255,255,255,0.05)'
+                plugins: {
+                    legend: {
+                        display: true,
+                        labels: {
+                            color: '#333',
+                            font: {
+                                weight: 'bold'
+                            }
+                        }
                     },
-                    ticks: {
-                        color: '#94a3b8'
+
+                    tooltip: {
+                        backgroundColor: '#000',
+                        titleColor: '#fff',
+                        bodyColor: '#fff',
+                        padding: 12,
+                        displayColors: false
                     }
                 },
 
-                y: {
-                    grid: {
-                        display: false
+                scales: {
+                    x: {
+                        grid: {
+                            display: false
+                        },
+                        ticks: {
+                            color: '#444',
+                            font: {
+                                weight: '600'
+                            }
+                        }
                     },
-                    ticks: {
-                        color: '#94a3b8'
-                    }
-                }
-            }
-        }
-});
-
-
-        // PIE CHART (Orders Overview)
-        console.log("Labels:", {{ review_labels| safe }});
-        console.log("Counts:", {{ review_counts| safe }});
-        new Chart(document.getElementById('OrdersOverview'), {
-            type: 'pie',
-            data: {
-                labels: {{ review_labels| safe }},
-            datasets: [{
-                label: 'Orders Overview',
-                data: {{ review_counts| safe }},
-            backgroundColor: ['#4CAF50', '#FFC107', '#F44336'] // Completed, Pending, Cancelled
-        }]
-    },
-            options: {
-            responsive: true,
-            plugins: {
-                legend: { position: 'bottom' }
-            }
-        }
-});
-        // BAR CHART (Top Selling Food)
-        new Chart(document.getElementById('topFoodChart'), {
-            type: 'line',
-            data: {
-                labels: {{ top_food_labels| safe }},
-            datasets: [{
-                label: 'Top Selling Food',
-                data: {{ top_food_counts| safe }},
-
-            fill: true,
-
-            borderColor: '#ff6b6b',
-            backgroundColor: (context) => {
-                const ctx = context.chart.ctx;
-                const gradient = ctx.createLinearGradient(0, 0, 0, 400);
-                gradient.addColorStop(0, 'rgba(255, 107, 107, 0.4)');
-                gradient.addColorStop(1, 'rgba(255, 107, 107, 0.0)');
-                return gradient;
-            },
-
-            pointBackgroundColor: '#fff',
-            pointBorderColor: '#ff6b6b',
-            pointRadius: 5,
-            pointHoverRadius: 8,
-
-            tension: 0.4,   // smooth curve
-            borderWidth: 3
-        }]
-    },
-
-            options: {
-            responsive: true,
-
-            plugins: {
-                legend: {
-                    display: true,
-                    labels: {
-                        color: '#333',
-                        font: {
-                            weight: 'bold'
+                    y: {
+                        grid: {
+                            color: 'rgba(0,0,0,0.05)'
+                        },
+                        ticks: {
+                            color: '#444'
                         }
                     }
                 },
 
-                tooltip: {
-                    backgroundColor: '#111',
-                    titleColor: '#fff',
-                    bodyColor: '#fff',
-                    padding: 10,
-                    displayColors: false
+                animation: {
+                    duration: 1400,
+                    easing: 'easeOutBounce'
                 }
-            },
+            }
+});
 
-            scales: {
-                x: {
-                    grid: {
-                        display: false
+
+            const ctx = document.getElementById('employeeJoinChart');
+
+            new Chart(ctx, {
+                type: 'line', // 🔥 you can change to 'bar', 'line', 'radar'
+                data: {
+                    labels: {{ months| safe }},
+                datasets: [{
+                    label: 'Employees Joined',
+                    data: {{ employee_counts| safe }},
+
+                fill: true,
+                tension: 0.4, // smooth curve
+
+                backgroundColor: 'rgba(29, 43, 100, 0.2)',
+                borderColor: '#1d2b64',
+                borderWidth: 3,
+
+                pointBackgroundColor: '#f8cdda',
+                pointBorderColor: '#1d2b64',
+                pointRadius: 5,
+                pointHoverRadius: 8
+        }]
+    },
+
+                options: {
+                responsive: true,
+                maintainAspectRatio: false,
+
+                interaction: {
+                    mode: 'index',
+                    intersect: false   // 🔥 IMPORTANT (whole line hover active)
+                },
+
+                plugins: {
+                    legend: {
+                        display: true,
+                        labels: {
+                            color: '#333',
+                            font: {
+                                size: 14,
+                                weight: 'bold'
+                            }
+                        }
                     },
-                    ticks: {
-                        color: '#555'
+
+                    tooltip: {
+                        backgroundColor: '#1d2b64',
+                        titleColor: '#fff',
+                        bodyColor: '#fff',
+                        padding: 12
                     }
                 },
-                y: {
-                    grid: {
-                        color: 'rgba(0,0,0,0.05)'
+
+                scales: {
+                    x: {
+                        grid: {
+                            display: false
+                        },
+                        ticks: {
+                            color: '#555',
+                            font: {
+                                weight: 'bold'
+                            }
+                        }
                     },
-                    ticks: {
-                        color: '#555'
+
+                    y: {
+                        beginAtZero: true,
+                        grid: {
+                            color: 'rgba(0,0,0,0.05)'
+                        },
+                        ticks: {
+                            color: '#555'
+                        }
                     }
                 }
-            },
-
-            animation: {
-                duration: 1500,
-                easing: 'easeInOutQuart'
             }
-        }
+});
+
+
+            // PIE CHART (Orders Overview)
+            console.log("Labels:", {{ review_labels| safe }});
+            console.log("Counts:", {{ review_counts| safe }});
+            new Chart(document.getElementById('OrdersOverview'), {
+                type: 'pie',
+                data: {
+                    labels: {{ review_labels| safe }},
+                datasets: [{
+                    label: 'Orders Overview',
+                    data: {{ review_counts| safe }},
+                backgroundColor: ['#4CAF50', '#FFC107', '#F44336'] // Completed, Pending, Cancelled
+        }]
+    },
+                options: {
+                responsive: true,
+                plugins: {
+                    legend: { position: 'bottom' }
+                }
+            }
+});
+            // BAR CHART (Top Selling Food)
+            new Chart(document.getElementById('topFoodChart'), {
+                type: 'line',
+                data: {
+                    labels: {{ top_food_labels| safe }},
+                datasets: [{
+                    label: 'Top Selling Food',
+                    data: {{ top_food_counts| safe }},
+
+                fill: true,
+
+                borderColor: '#ff6b6b',
+                backgroundColor: (context) => {
+                    const ctx = context.chart.ctx;
+                    const gradient = ctx.createLinearGradient(0, 0, 0, 400);
+                    gradient.addColorStop(0, 'rgba(255, 107, 107, 0.4)');
+                    gradient.addColorStop(1, 'rgba(255, 107, 107, 0.0)');
+                    return gradient;
+                },
+
+                pointBackgroundColor: '#fff',
+                pointBorderColor: '#ff6b6b',
+                pointRadius: 5,
+                pointHoverRadius: 8,
+
+                tension: 0.4,   // smooth curve
+                borderWidth: 3
+        }]
+    },
+
+                options: {
+                responsive: true,
+
+                interaction: {
+                    mode: 'index',
+                    intersect: false
+                },
+
+                plugins: {
+                    legend: {
+                        display: true,
+                        labels: {
+                            color: '#333',
+                            font: {
+                                weight: 'bold'
+                            }
+                        }
+                    },
+
+                    tooltip: {
+                        backgroundColor: '#111',
+                        titleColor: '#fff',
+                        bodyColor: '#fff',
+                        padding: 10,
+                        displayColors: false
+                    }
+                },
+
+                scales: {
+                    x: {
+                        grid: {
+                            display: false
+                        },
+                        ticks: {
+                            color: '#555'
+                        }
+                    },
+                    y: {
+                        grid: {
+                            color: 'rgba(0,0,0,0.05)'
+                        },
+                        ticks: {
+                            color: '#555'
+                        }
+                    }
+                },
+
+                animation: {
+                    duration: 1500,
+                    easing: 'easeInOutQuart'
+                }
+            }
 });
 
 });
-    </script>
+        </script>
 
-    {% endblock %}
+        {% endblock %}

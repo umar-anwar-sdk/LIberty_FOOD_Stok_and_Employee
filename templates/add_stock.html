@@ -1,11 +1,39 @@
 {% extends "base.html" %}
 {% block content %}
 
+<style>
+/* Premium Select Styling */
+.form-select {
+    border: 1px solid #d1d5db;
+    border-radius: 12px;
+    padding: 10px 14px;
+    font-weight: 500;
+    background-color: #fff;
+    transition: 0.3s;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+}
+
+/* Focus Effect */
+.form-select:focus {
+    border-color: #1e3c72;
+    box-shadow: 0 0 0 0.2rem rgba(30, 60, 114, 0.15);
+}
+
+/* Hover effect */
+.form-select:hover {
+    border-color: #1e3c72;
+}
+
+/* Optional: nicer option text */
+.form-select option {
+    padding: 10px;
+}
+</style>
+
 <div class="card border-0 shadow-lg rounded-4 overflow-hidden">
 
     <!-- Header -->
-    <div class="p-4 text-white"
-        style="background: linear-gradient(135deg, #1e3c72, #2a5298); margin-top: 70px;">
+    <div class="p-4 text-white" style="background: linear-gradient(135deg, #1e3c72, #2a5298);">
 
         <div class="d-flex justify-content-between align-items-center">
             <div>
@@ -20,106 +48,127 @@
     </div>
 
     <!-- Body -->
-    <div class="card-body p-4 bg-light">
+    <div class="container-fluid py-4" style="background:#f4f6fb; min-height:100vh;">
+
+<div class="card border-0 shadow-lg rounded-4 overflow-hidden">
+
+    <!-- BODY -->
+    <div class="card-body p-4">
 
         <form method="post">
             {% csrf_token %}
 
             <div id="stockContainer">
 
-                <div class="stock-group bg-white border-0 shadow-sm rounded-4 p-4 mb-4">
+                <!-- STOCK CARD -->
+                <div class="stock-group bg-white shadow-sm rounded-4 p-4 mb-4 position-relative"
+                     style="border-left:6px solid #1e3c72; transition:0.3s;">
 
-                    <!-- Item -->
+                    <!-- REMOVE BUTTON -->
+                    <button type="button"
+                            onclick="removeStock(this)"
+                            title="Remove"
+                            style="
+                                position:absolute;
+                                top:12px;
+                                right:12px;
+                                width:40px;
+                                height:40px;
+                                border-radius:50%;
+                                border:none;
+                                background:#fff;
+                                box-shadow:0 2px 10px rgba(0,0,0,0.15);
+                                color:#dc3545;
+                                font-size:18px;
+                                transition:0.3s;
+                            "
+                            onmouseover="this.style.background='#dc3545'; this.style.color='#fff';"
+                            onmouseout="this.style.background='#fff'; this.style.color='#dc3545';">
+
+                        ✖
+                    </button>
+
+                    <!-- ITEM -->
                     <div class="mb-3">
-                        <label class="form-label fw-semibold text-dark">
-                            Select Item
-                        </label>
+                        <label class="form-label fw-semibold">Select Item</label>
 
                         <select name="food_item"
-                            class="form-select rounded-3 food-item"
-                            onchange="updatePrice(this)">
-
+                                class="form-select rounded-3 shadow-sm food-item"
+                                onchange="updatePrice(this)">
                             {% for item in items %}
-                            <option value="{{ item.id }}"
-                                data-price="{{ item.price }}Rs.">
-
-                                {{ item.name }} (Current: {{ item.quantity }})
-
+                            <option value="{{ item.id }}" data-price="{{ item.price }}">
+                                🍔 {{ item.name }} (Stock: {{ item.quantity }})
                             </option>
                             {% endfor %}
                         </select>
                     </div>
 
-                    <!-- Quantity -->
+                    <!-- UNIT -->
                     <div class="mb-3">
-                        <label class="form-label fw-semibold text-dark">
-                            Quantity to Add
-                        </label>
+                        <label class="form-label fw-semibold">Unit Type</label>
+
+                        <select name="unit_type"
+                                class="form-select rounded-3 shadow-sm unit-type"
+                                onchange="calculateTotal(this.closest('.stock-group'))">
+                            <option value="unit">Unit (1 pc)</option>
+                            <option value="pack">Pack (4 pcs)</option>
+                            <option value="crate">Crate (6 pcs)</option>
+                            <option value="carton">Carton (24 pcs)</option>
+                        </select>
+                    </div>
+
+                    <!-- QTY -->
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Quantity</label>
 
                         <input type="number"
-                            name="quantity"
-                            class="form-control rounded-3 quantity"
-                            min="1"
-                            required
-                            oninput="calculateTotal(this)">
+                               name="quantity"
+                               class="form-control rounded-3 shadow-sm quantity"
+                               min="1"
+                               placeholder="Enter quantity"
+                               oninput="calculateTotal(this.closest('.stock-group'))">
                     </div>
 
-                    <!-- Price -->
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold text-dark">
-                            Price per Unit
-                        </label>
+                    <!-- PRICE + TOTAL -->
+                    <div class="row">
+                        <div class="col-md-6 mb-2">
+                            <label class="form-label fw-semibold">Price</label>
+                            <input type="text"
+                                   class="form-control rounded-3 bg-light unit-price fw-semibold"
+                                   readonly>
+                        </div>
 
-                        <input type="text"
-                            class="form-control rounded-3 bg-light unit-price"
-                            readonly>
+                        <div class="col-md-6 mb-2">
+                            <label class="form-label fw-semibold">Total</label>
+                            <input type="text"
+                                   class="form-control rounded-3 bg-light total-price fw-bold text-success"
+                                   readonly>
+                        </div>
                     </div>
-
-                    <!-- Total -->
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold text-dark">
-                            Total Price
-                        </label>
-
-                        <input type="text"
-                            class="form-control rounded-3 bg-light total-price"
-                            readonly>
-                    </div>
-
-                    <!-- Remove -->
-                    <button type="button"
-                        class="btn btn-outline-danger rounded-pill px-4"
-                        onclick="removeStock(this)">
-
-                        🗑 Remove
-                    </button>
 
                 </div>
 
             </div>
 
-            <!-- Add More -->
+            <!-- ADD BUTTON -->
             <button type="button"
-                class="btn text-white rounded-pill px-4 py-2 mb-4 shadow-sm"
-                style="background: linear-gradient(135deg, #1e3c72, #2a5298);"
-                onclick="addStock()">
-
+                    class="btn text-white rounded-pill px-4 py-2 mb-4 shadow-sm"
+                    style="background:linear-gradient(135deg,#1e3c72,#2a5298);"
+                    onclick="addStock()">
                 ➕ Add Another Item
             </button>
 
-            <!-- Bottom Buttons -->
+            <!-- FOOTER BUTTONS -->
             <div class="d-flex justify-content-between">
 
                 <a href="{% url 'fooditem_list' %}"
-                    class="btn btn-secondary rounded-pill px-4">
-
+                   class="btn btn-light border rounded-pill px-4 shadow-sm">
                     ⬅ Back
                 </a>
 
                 <button type="submit"
-                    class="btn btn-success rounded-pill px-5 shadow-sm">
-
-                    ✅ Add Stock
+                        class="btn btn-success rounded-pill px-5 shadow-sm">
+                    ✅ Save Stock
                 </button>
 
             </div>
@@ -129,72 +178,91 @@
     </div>
 </div>
 
+</div>
+</div>
+
 <script>
-function updatePrice(select) {
-    const group = select.closest('.stock-group');
-    const price = select.options[select.selectedIndex].dataset.price || 0;
+    function updatePrice(select) {
+        const group = select.closest('.stock-group');
+        const price = select.options[select.selectedIndex].dataset.price || 0;
 
-    group.querySelector('.unit-price').value = price;
-    calculateTotal(group);
-}
-
-function calculateTotal(group) {
-    const qty = parseFloat(group.querySelector('.quantity').value) || 0;
-    const price = parseFloat(group.querySelector('.unit-price').value) || 0;
-
-    group.querySelector('.total-price').value = (qty * price).toFixed(2);
-}
-
-function addStock() {
-    const container = document.getElementById('stockContainer');
-    const first = container.querySelector('.stock-group');
-    const clone = first.cloneNode(true);
-
-    clone.querySelector('.quantity').value = '';
-    clone.querySelector('.unit-price').value = '';
-    clone.querySelector('.total-price').value = '';
-
-    const select = clone.querySelector('.food-item');
-    const qty = clone.querySelector('.quantity');
-
-    select.addEventListener('change', function () {
-        updatePrice(this);
-    });
-
-    qty.addEventListener('input', function () {
-        calculateTotal(clone);
-    });
-
-    container.appendChild(clone);
-}
-
-function removeStock(button) {
-    const container = document.getElementById('stockContainer');
-
-    if (container.children.length > 1) {
-        button.closest('.stock-group').remove();
-    } else {
-        alert("At least one item is required.");
+        group.querySelector('.unit-price').value = price;
+        calculateTotal(group);
     }
-}
+    function calculateTotal(group) {
 
-document.addEventListener("DOMContentLoaded", function () {
+        const qty = parseFloat(group.querySelector('.quantity').value) || 0;
+        const price = parseFloat(group.querySelector('.unit-price').value) || 0;
 
-    const firstGroup = document.querySelector('.stock-group');
+        const unitType = group.querySelector('.unit-type').value;
 
-    const select = firstGroup.querySelector('.food-item');
-    const qty = firstGroup.querySelector('.quantity');
+        let multiplier = 1;
 
-    select.addEventListener('change', function () {
-        updatePrice(this);
+        if (unitType === 'pack') {
+            multiplier = 4;
+        }
+        else if (unitType === 'crate') {
+            multiplier = 6;
+        }
+        else if (unitType === 'carton') {
+            multiplier = 24;
+        }
+
+        const total = qty * multiplier * price;
+
+        group.querySelector('.total-price').value = total.toFixed(2);
+    }
+
+    function addStock() {
+        const container = document.getElementById('stockContainer');
+        const first = container.querySelector('.stock-group');
+        const clone = first.cloneNode(true);
+
+        clone.querySelector('.quantity').value = '';
+        clone.querySelector('.unit-price').value = '';
+        clone.querySelector('.total-price').value = '';
+
+        const select = clone.querySelector('.food-item');
+        const qty = clone.querySelector('.quantity');
+
+        select.addEventListener('change', function () {
+            updatePrice(this);
+        });
+
+        qty.addEventListener('input', function () {
+            calculateTotal(clone);
+        });
+
+        container.appendChild(clone);
+    }
+
+    function removeStock(button) {
+        const container = document.getElementById('stockContainer');
+
+        if (container.children.length > 1) {
+            button.closest('.stock-group').remove();
+        } else {
+            alert("At least one item is required.");
+        }
+    }
+
+    document.addEventListener("DOMContentLoaded", function () {
+
+        const firstGroup = document.querySelector('.stock-group');
+
+        const select = firstGroup.querySelector('.food-item');
+        const qty = firstGroup.querySelector('.quantity');
+
+        select.addEventListener('change', function () {
+            updatePrice(this);
+        });
+
+        qty.addEventListener('input', function () {
+            calculateTotal(firstGroup);
+        });
+
+        updatePrice(select);
     });
-
-    qty.addEventListener('input', function () {
-        calculateTotal(firstGroup);
-    });
-
-    updatePrice(select);
-});
 </script>
 
 {% endblock %}

@@ -3,6 +3,8 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib import messages
 from django.contrib.auth import get_user_model
 from django.contrib.auth.hashers import make_password
+from django.contrib.auth.decorators import login_required
+
 
 User = get_user_model()
 
@@ -97,3 +99,29 @@ def dashboard_redirect(request):
 
     elif request.user.role == 'customer':
         return redirect('customer.html')
+    
+@login_required
+def profile(request):
+    return render(request, 'profile.html')
+
+
+@login_required
+def edit_profile(request):
+
+    if request.method == "POST":
+
+        user = request.user
+        user.first_name = request.POST.get("first_name")
+        user.last_name = request.POST.get("last_name")
+        user.email = request.POST.get("email")
+        user.phone = request.POST.get("phone")
+
+        if request.FILES.get("profile_image"):
+            user.profile_image = request.FILES["profile_image"]
+
+        user.save()
+
+        return redirect("profile")
+
+    return render(request, "edit_profile.html")
+    
