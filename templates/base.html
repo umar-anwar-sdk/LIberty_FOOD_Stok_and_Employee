@@ -89,6 +89,9 @@
       align-items: center;
       padding: 0 25px;
       box-shadow: 0 2px 10px rgba(0, 0, 0, .05);
+      position: sticky;
+      top: 0;
+      z-index: 999;
     }
 
     .profile {
@@ -145,17 +148,25 @@
     .dropdown-toggle::after {
       display: none !important;
     }
-    .fa-magnifying-glass,
-.fa-message, i {
-    cursor: pointer;
-    transition: 0.3s;
-}
 
-.fa-magnifying-glass, i:hover,
-.fa-message:hover {
-    color: #1e3c72;
-    transform: scale(1.1);
-}
+    .fa-magnifying-glass,
+    .fa-message,
+    i {
+      cursor: pointer;
+      transition: 0.3s;
+    }
+
+    .fa-magnifying-glass,
+    i:hover,
+    .fa-message:hover {
+      color: #1e3c72;
+      transform: scale(1.1);
+    }
+
+    .sidebar ul li a.active {
+      background: #1d2b64;
+      color: white;
+    }
   </style>
 </head>
 
@@ -171,67 +182,78 @@
           style="height:90px;">
       </div>
       <div class="pro" style="display: flex; gap: 10px;">
-      <div class="profile" style="margin-left: 15px;">
-       {% if request.user.profile_image %}
-        <img src="{{ request.user.profile_image.url }}" alt="">
-        {% else %}
-        <img src="{% static 'assets/images/faces/face1.jpg' %}" alt="">
-        {% endif %}
+        <div class="profile" style="margin-left: 15px;">
+          {% if request.user.profile_image %}
+          <img src="{{ request.user.profile_image.url }}" alt="">
+          {% else %}
+          <img src="{% static 'assets/images/faces/face1.jpg' %}" alt="">
+          {% endif %}
+        </div>
+        <div style="margin-top: 7px;">
+          <span style="font-weight: bold;">
+              {{ request.user.get_full_name|default:request.user.username }}
+            </span>
+        </div>
       </div>
-      <div style="margin-top: 7px;"><h5>Liberty Food</h5></div></div>
 
       <ul>
 
         <li>
-          <a href="{% url 'home' %}">
+          <a href="{% url 'home' %}" class="{% if request.resolver_match.url_name == 'home' %}active{% endif %}">
             <span><i class="fas fa-gauge"></i> Dashboard</span>
           </a>
         </li>
 
         <li>
-          <a href="{% url 'customer_list' %}">
+          <a href="{% url 'customer_list' %}"
+            class="{% if request.resolver_match.url_name == 'customer_list' %}active{% endif %}">
             <span><i class="fas fa-users"></i> Customers</span>
             <i class="fas fa-chevron-right"></i>
           </a>
         </li>
 
         <li>
-          <a href="{% url 'fooditem_add' %}">
+          <a href="{% url 'fooditem_add' %}"
+            class="{% if request.resolver_match.url_name == 'fooditem_add' %}active{% endif %}">
             <span><i class="fas fa-cart-shopping"></i> Add Food Item</span>
             <i class="fas fa-chevron-right"></i>
           </a>
         </li>
 
         <li>
-          <a href="{% url 'fooditem_list' %}">
+          <a href="{% url 'fooditem_list' %}"
+            class="{% if request.resolver_match.url_name == 'fooditem_list' %}active{% endif %}">
             <span><i class="fas fa-box"></i> Inventory</span>
             <i class="fas fa-chevron-right"></i>
           </a>
         </li>
 
         <li>
-          <a href="{% url 'employee_list' %}">
+          <a href="{% url 'employee_list' %}"
+            class="{% if request.resolver_match.url_name == 'employee_list' %}active{% endif %}">
             <span><i class="fas fa-user-tie"></i> Employees</span>
             <i class="fas fa-chevron-right"></i>
           </a>
         </li>
 
         <li>
-          <a href="{% url 'order_add' %}">
+          <a href="{% url 'order_add' %}"
+            class="{% if request.resolver_match.url_name == 'order_add' %}active{% endif %}">
             <span><i class="fas fa-receipt"></i> Add Order</span>
             <i class="fas fa-chevron-right"></i>
           </a>
         </li>
 
         <li>
-          <a href="{% url 'food_quantity' %}">
+          <a href="{% url 'food_quantity' %}"
+            class="{% if request.resolver_match.url_name == 'food_quantity' %}active{% endif %}">
             <span><i class="fas fa-utensils"></i> Food Quantity</span>
             <i class="fas fa-chevron-right"></i>
           </a>
         </li>
 
         <li>
-          <a href="#">
+          <a href="#" class="{% if request.resolver_match.url_name == 'notifications' %}active{% endif %}">
             <span><i class="fas fa-bell"></i> Notifications</span>
             <i class="fas fa-chevron-right"></i>
           </a>
@@ -335,7 +357,7 @@
               {% endif %}
             </div>
 
-            <span class="ms-2">
+            <span class="ms-2" style="font-weight: bold;">
               {{ request.user.get_full_name|default:request.user.username }}
             </span>
 

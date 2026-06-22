@@ -2,7 +2,147 @@
 {% load static %}
 <!-- <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"> -->
 {% block content %}
+<style>
+    /* ===== Card Glass Effect ===== */
+    .modern-card {
+        border: none;
+        border-radius: 18px;
+        background: rgba(255, 255, 255, 0.75);
+        backdrop-filter: blur(12px);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+        animation: fadeUp 0.5s ease;
+        width: 1025px;
+    }
+    
 
+    /* Title */
+    .title-glow {
+        font-weight: 700;
+        color: #2b2f77;
+        letter-spacing: 0.5px;
+    }
+
+    /* Live badge */
+    .live-badge {
+        background: #22c55e;
+        color: white;
+        padding: 6px 12px;
+        border-radius: 50px;
+        font-size: 12px;
+        animation: pulse 1.5s infinite;
+    }
+
+    /* Table */
+    .modern-table thead {
+        background: #2b2f77;
+        color: white;
+    }
+
+    .modern-table thead th {
+        font-size: 15px;
+        font-weight: 700;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        color: #ffffff;
+        padding: 16px 14px;
+        background: linear-gradient(135deg, #4f46e5, #7c3aed);
+        border: none;
+    }
+
+
+    .modern-table tbody tr {
+        transition: all 0.25s ease;
+        border-bottom: 1px solid #eee;
+    }
+
+    .modern-table tbody tr:hover {
+        transform: translateY(-3px);
+        background: #f7f8ff;
+        box-shadow: 0 6px 15px rgba(0, 0, 0, 0.06);
+    }
+
+    /* Order ID */
+    .order-id {
+        font-weight: 700;
+        color: #2b2f77;
+        text-decoration-line: underline;
+        text-decoration-color: red;
+    }
+
+    /* Customer chip */
+    .user-chip {
+        display: inline-block;
+        padding: 6px 12px;
+        background: #f1f5ff;
+        color: rgb(0, 0, 0);
+        border-left: 3px solid #6366f1;
+        border-radius: 30px;
+        font-size: 15px;
+        font-weight: 700;
+    }
+
+    /* Items tag */
+    .item-tag {
+        display: block;
+        margin: 4px 0;
+        padding: 6px 12px;
+        font-size: 16px;
+        background: #f1f5ff;
+        color: #000000;
+        border-left: 3px solid #6366f1;
+        border-radius: 8px;
+        width: fit-content;
+        font-weight: 700;
+    }
+
+    /* Price */
+    .price {
+        font-weight: 700;
+        color: #16a34a;
+        text-decoration-line: underline;
+        text-decoration-color: red;
+    }
+
+    /* Date */
+    .date {
+        color: #6b7280;
+        font-size: 15px;
+        font-weight: 600;
+        text-decoration-line: underline;
+        text-decoration-color: red;
+    }
+
+    /* Animations */
+    @keyframes fadeUp {
+        from {
+            opacity: 0;
+            transform: translateY(15px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @keyframes pulse {
+        0% {
+            transform: scale(1);
+        }
+
+        50% {
+            transform: scale(1.1);
+        }
+
+        100% {
+            transform: scale(1);
+        }
+    }
+
+    .table-row-anim {
+        animation: fadeUp 0.4s ease forwards;
+    }
+</style>
 <div class="content-wrapper">
 
 
@@ -155,50 +295,68 @@
         </div>
 
 
-        <div class="card shadow-sm mt-4">
-            <div class="card-body">
-                <h5>Recent Orders</h5>
-                <table class="table">
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Customer</th>
-                            <th>Items</th>
-                            <th>Total Price</th>
-                            <th>Date</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for order in recent_orders %}
-                        <tr>
-                            <td>{{ order.id }}</td>
+        <div class="card modern-card mt-4">
+            <div class="card-body p-4">
 
-                            <!-- ✅ Customer -->
-                            <td>{{ order.customer.name }}</td>
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="mb-0 title-glow">Recent Orders</h5>
+                    <span class="badge live-badge">Live</span>
+                </div>
 
-                            <!-- ✅ Items (FIXED) -->
-                            <td>
-                                {% for item in order.items.all %}
-                                {{ item.food_item.name }} (x{{ item.quantity }})<br>
-                                {% empty %}
-                                No items
-                                {% endfor %}
-                            </td>
+                <div class="table-responsive">
+                    <table class="table modern-table align-middle">
 
-                            <!-- ✅ Total Price (FIXED) -->
-                            <td>{{ order.total_price }}</td>
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Customer</th>
+                                <th>Items</th>
+                                <th>Total</th>
+                                <th>Date</th>
+                            </tr>
+                        </thead>
 
-                            <!-- ✅ Date (FIXED) -->
-                            <td>{{ order.order_date }}</td>
+                        <tbody>
+                            {% for order in recent_orders %}
+                            <tr class="table-row-anim">
+                                <td class="order-id">#{{ order.id }}</td>
 
-                        </tr>
-                        {% empty %}
-                        <tr>
-                            <td colspan="5">No recent orders</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+                                <td>
+                                    <div class="user-chip">
+                                        {{ order.customer.name }}
+                                    </div>
+                                </td>
+
+                                <td>
+                                    {% for item in order.items.all %}
+                                    <div class="item-tag">
+                                        {{ item.food_item.name }} × {{ item.quantity }}
+                                    </div>
+                                    {% empty %}
+                                    <span class="text-muted">No items</span>
+                                    {% endfor %}
+                                </td>
+
+                                <td class="price">
+                                    ₨ {{ order.total_price }}
+                                </td>
+
+                                <td class="date">
+                                    {{ order.order_date }}
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="5" class="text-center text-muted py-4">
+                                    No recent orders
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+
+                    </table>
+                </div>
+
             </div>
         </div>
 
@@ -383,7 +541,7 @@
                 options: {
                 responsive: true,
                 plugins: {
-                    legend: { position: 'bottom' }
+                    legend: { position: 'bottom'}
                 }
             }
 });

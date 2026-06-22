@@ -4,8 +4,7 @@
 <!-- Premium Header -->
 <div class="card border-0 shadow-lg rounded-4 overflow-hidden">
 
-    <div class="p-4 text-white"
-        style="background: linear-gradient(135deg, #1e3c72, #2a5298); ">
+    <div class="p-4 text-white" style="background: linear-gradient(135deg, #1e3c72, #2a5298); ">
 
         <div class="d-flex justify-content-between align-items-center flex-wrap">
 
@@ -41,9 +40,16 @@
                         <select name="customer" class="form-select form-select-lg rounded-3" required>
                             <option value="">Select Customer</option>
                             {% for c in customers %}
-                                <option value="{{ c.id }}">{{ c.name }}</option>
+                            <option value="{{ c.id }}">{{ c.name }}</option>
                             {% endfor %}
                         </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">
+                            Paid Amount
+                        </label>
+
+                        <input type="number" step="0.01" name="paid_amount" class="form-control" value="0">
                     </div>
 
                     <hr class="opacity-25">
@@ -52,9 +58,7 @@
                     <div class="d-flex justify-content-between align-items-center mb-3">
                         <h5 class="fw-bold mb-0">🍽 Order Items</h5>
 
-                        <button type="button"
-                                class="btn btn-primary btn-sm rounded-3 px-3"
-                                onclick="addProduct()">
+                        <button type="button" class="btn btn-primary btn-sm rounded-3 px-3" onclick="addProduct()">
                             ➕ Add Item
                         </button>
                     </div>
@@ -68,18 +72,15 @@
                                 <small class="text-muted fw-semibold">Item #1</small>
                             </div>
 
-                            <select name="food_item[]"
-                                    class="form-select food-item rounded-3 mb-3"
-                                    onchange="updatePrice(this)" required>
+                            <select name="food_item[]" class="form-select food-item rounded-3 mb-3"
+                                onchange="updatePrice(this)" required>
 
                                 <option value="">Select Food Item</option>
 
                                 {% for f in food_items %}
-                                    <option value="{{ f.id }}"
-                                            data-price="{{ f.price }}"
-                                            data-stock="{{ f.quantity }}">
-                                        {{ f.name }} • Stock {{ f.quantity }}
-                                    </option>
+                                <option value="{{ f.id }}" data-price="{{ f.price }}" data-stock="{{ f.quantity }}">
+                                    {{ f.name }} • Stock {{ f.quantity }}
+                                </option>
                                 {% endfor %}
 
                             </select>
@@ -88,35 +89,27 @@
 
                                 <div class="col-md-4">
                                     <label class="form-label text-muted">Qty</label>
-                                    <input type="number"
-                                           name="quantity[]"
-                                           class="form-control quantity rounded-3"
-                                           min="1"
-                                           value="1"
-                                           oninput="calculateTotal(this)"
-                                           required>
+                                    <input type="number" name="quantity[]" class="form-control quantity rounded-3"
+                                        min="1" value="1" oninput="calculateTotal(this)" required>
                                 </div>
 
                                 <div class="col-md-4">
                                     <label class="form-label text-muted">Price</label>
-                                    <input type="text"
-                                           class="form-control unit-price bg-white rounded-3"
-                                           readonly>
+                                    <input type="text" class="form-control unit-price bg-white rounded-3" readonly>
                                 </div>
 
                                 <div class="col-md-4">
                                     <label class="form-label text-muted">Total</label>
                                     <input type="text"
-                                           class="form-control total-price bg-white fw-bold text-success rounded-3"
-                                           readonly>
+                                        class="form-control total-price bg-white fw-bold text-success rounded-3"
+                                        readonly>
                                 </div>
 
                             </div>
 
                             <div class="text-end mt-3">
-                                <button type="button"
-                                        class="btn btn-outline-danger btn-sm rounded-3"
-                                        onclick="removeProduct(this)">
+                                <button type="button" class="btn btn-outline-danger btn-sm rounded-3"
+                                    onclick="removeProduct(this)">
                                     Remove
                                 </button>
                             </div>
@@ -128,17 +121,16 @@
                     <!-- ACTIONS -->
                     <div class="d-flex justify-content-between mt-4">
 
-                        <a href="{% url 'order_list' %}"
-                           class="btn btn-outline-secondary rounded-3 px-4">
+                        <a href="{% url 'order_list' %}" class="btn btn-outline-secondary rounded-3 px-4">
                             ⬅ Back
                         </a>
 
-                        <button type="submit"
-                                class="btn btn-success rounded-3 px-4">
+                        <button type="submit" class="btn btn-success rounded-3 px-4">
                             ✅ Place Order
                         </button>
 
                     </div>
+                    
 
                 </form>
 
@@ -178,22 +170,22 @@
     }
 
     function addProduct() {
-    const container = document.getElementById('productContainer');
+        const container = document.getElementById('productContainer');
 
-    const first = container.children[0];
-    const newGroup = first.cloneNode(true);
+        const first = container.children[0];
+        const newGroup = first.cloneNode(true);
 
-    // reset values properly
-    newGroup.querySelectorAll('input, select').forEach(el => {
-        if (el.tagName === "SELECT") {
-            el.selectedIndex = 0;
-        } else {
-            el.value = "";
-        }
-    });
+        // reset values properly
+        newGroup.querySelectorAll('input, select').forEach(el => {
+            if (el.tagName === "SELECT") {
+                el.selectedIndex = 0;
+            } else {
+                el.value = "";
+            }
+        });
 
-    container.appendChild(newGroup);
-}
+        container.appendChild(newGroup);
+    }
     function removeProduct(button) {
 
         const container = document.getElementById('productContainer');

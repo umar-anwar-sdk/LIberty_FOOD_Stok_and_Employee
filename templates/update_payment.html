@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="container mt-4">
+
+    <div class="card shadow p-4">
+
+        <h3 class="mb-3">
+            💰 Receive Payment
+        </h3>
+
+        <p>
+            Order #{{ order.id }}
+        </p>
+
+        <p>
+            Total Bill:
+            <strong>Rs. {{ order.total_price }}</strong>
+        </p>
+
+        <p>
+            Already Paid:
+            <strong>Rs. {{ order.paid_amount }}</strong>
+        </p>
+
+        <p>
+            Remaining:
+            <strong class="text-danger">
+                Rs. {{ order.remaining_amount }}
+            </strong>
+        </p>
+
+        <form method="post">
+            {% csrf_token %}
+
+            <div class="mb-3">
+                <label class="form-label">
+                    Receive Cash
+                </label>
+
+                <input 
+                    type="number"
+                    step="0.01"
+                    name="amount"
+                    class="form-control"
+                    required>
+            </div>
+
+            <button class="btn btn-success">
+                ✅ Save Payment
+            </button>
+
+            <a href="javascript:history.back()" 
+               class="btn btn-secondary">
+                Back
+            </a>
+
+        </form>
+
+    </div>
+
+</div>
+
+{% endblock %}

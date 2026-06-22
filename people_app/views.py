@@ -13,6 +13,8 @@ from django.conf import settings
 from accounts.models import CustomUser
 from .models import Employee, EmployeeTransaction
 from django.http import HttpResponse
+from django.contrib.auth.decorators import login_required
+
 
 
 
@@ -46,6 +48,7 @@ def customer_add(request):
         Customer.objects.create(
             user=user,
             name=name,
+            email=email,
             address=address,
             phone=phone
         )
@@ -291,3 +294,52 @@ def calculate_salary(request, employee_id):
             })
 
     return render(request, "calculate_salary.html", context)
+def customer_record(request, id):
+
+    customer = Customer.objects.get(id=id)
+
+    orders = Order.objects.filter(
+        customer=customer
+    ).prefetch_related(
+        'items__food_item'
+    ).order_by('-order_date')
+
+    return render(
+        request,
+        'customer_record.html',
+        {
+            'customer': customer,
+            'orders': orders
+        }
+    )
+
+
+@login_required
+def update_payment(request, id):
+
+    order = get_object_or_404(Order, id=id)
+
+    if request.method == "POST":
+
+        amount = Decimal(request.POST.get("amount") or "0")
+
+        order.paid_amount = order.paid_amount + amount
+
+        if order.paid_amount >= order.total_price():
+            order.payment_status = "Cleared"
+        else:
+            order.payment_status = "Pending"
+
+        order.save()
+
+        messages.success(request, "Payment updated successfully")
+
+        return redirect(
+            "customer_record",
+            order.customer.id
+        )
+
+    return render(request, "update_payment.html", {
+        "order": order
+    })
+

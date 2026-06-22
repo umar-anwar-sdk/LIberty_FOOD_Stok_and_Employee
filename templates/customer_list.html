@@ -6,30 +6,28 @@
 <!-- Premium Header -->
 <div class="card border-0 shadow-lg rounded-4 overflow-hidden">
 
-    <div class="p-4 text-white"
-        style="background: linear-gradient(135deg, #1e3c72, #2a5298);">
+  <div class="p-4 text-white" style="background: linear-gradient(135deg, #1e3c72, #2a5298);">
 
-        <div class="d-flex justify-content-between align-items-center flex-wrap">
+    <div class="d-flex justify-content-between align-items-center flex-wrap">
 
-            <div>
-                <h2 class="fw-bold mb-1">
-                    👥 Customers
-                </h2>
+      <div>
+        <h2 class="fw-bold mb-1">
+          👥 Customers
+        </h2>
 
-                <p class="mb-0 opacity-75">
-                    Manage all registered customers and their details
-                </p>
-            </div>
-                        <div class="d-flex justify-content-between align-items-center mb-3">
+        <p class="mb-0 opacity-75">
+          Manage all registered customers and their details
+        </p>
+      </div>
+      <div class="d-flex justify-content-between align-items-center mb-3">
 
-              <a href="{% url 'customer_add' %}"
-                 class="btn btn-primary rounded-pill px-4 shadow-sm">
-                ➕ Add Customer
-              </a>
-            </div>
-        </div>
-
+        <a href="{% url 'customer_add' %}" class="btn btn-primary rounded-pill px-4 shadow-sm">
+          ➕ Add Customer
+        </a>
+      </div>
     </div>
+
+  </div>
 </div>
 
 <!-- Main Card -->
@@ -58,21 +56,22 @@
 
                   {% for c in customers %}
                   <tr>
-                    <td class="fw-semibold">{{ c.name }}</td>
+                    <td class="fw-semibold">
+                      <a href="{% url 'customer_record' c.id %}">
+                        {{ c.name }}
+                      </a>
+                    </td>
                     <td>{{ c.address }}</td>
                     <td>{{ c.phone }}</td>
 
                     <td class="text-center">
 
-                      <form method="post"
-                            action="{% url 'customer_remove' %}"
-                            style="display:inline;">
+                      <form method="post" action="{% url 'customer_remove' %}" style="display:inline;">
                         {% csrf_token %}
                         <input type="hidden" name="customer_id" value="{{ c.id }}">
 
-                        <button type="submit"
-                                class="btn btn-sm btn-danger rounded-pill px-3"
-                                onclick="return confirm('Are you sure you want to delete this customer?');">
+                        <button type="submit" class="btn btn-sm btn-danger rounded-pill px-3"
+                          onclick="return confirm('Are you sure you want to delete this customer?');">
                           🗑 Delete
                         </button>
 

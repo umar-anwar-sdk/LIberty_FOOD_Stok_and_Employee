@@ -60,18 +60,44 @@ class StockTransaction(models.Model):
 
 # 🔹 Order
 class Order(models.Model):
-    
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="Pending")
-    customer = models.ForeignKey(Customer, on_delete=models.CASCADE)
+
+    PAYMENT_CHOICES = [
+        ("Pending", "Pending"),
+        ("Cleared", "Cleared"),
+    ]
+
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default="Pending"
+    )
+
+    customer = models.ForeignKey(
+        Customer,
+        on_delete=models.CASCADE
+    )
+
     order_date = models.DateTimeField(auto_now_add=True)
+
+    payment_status = models.CharField(
+        max_length=20,
+        choices=PAYMENT_CHOICES,
+        default="Pending"
+    )
+
+    paid_amount = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=0
+    )
+
     def total_price(self):
         return sum(
             item.food_item.price * item.quantity
             for item in self.items.all()
         )
-
-    def __str__(self):
-        return f"Order #{self.id} - {self.customer.name}"
+    def remaining_amount(self):
+        return self.total_price() - self.paid_amount
 
 
 # 🔹 Order Items
@@ -82,4 +108,30 @@ class OrderItem(models.Model):
 
     def __str__(self):
         return f"{self.quantity} x {self.food_item.name}"
+    
+
+class Payment(models.Model):
+
+    order = models.ForeignKey(
+        Order,
+        related_name="payments",
+        on_delete=models.CASCADE
+    )
+
+    amount = models.DecimalField(
+        max_digits=10,
+        decimal_places=2
+    )
+
+    note = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True
+    )
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Payment Rs {self.amount} - Order #{self.order.id}"
+
 # Create your models here.

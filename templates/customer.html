@@ -1,81 +1,81 @@
 {% extends "base.html" %}
+
 {% block content %}
 
-<div class="container mt-5">
+<div class="container mt-4">
 
-  <!-- WELCOME SECTION -->
-  <div class="card shadow-sm mb-4">
-    <div class="card-body">
+    <h2>
+        Welcome {{ customer.name }}
+    </h2>
 
-      <h3>
-        Welcome, {{ request.user.username }} 👋
-      </h3>
+    <h4>
+        Total Orders: {{ customer_orders.count }}
+    </h4>
 
-      <p class="text-muted mb-0">
-        Here is your order dashboard overview.
-      </p>
 
-    </div>
-  </div>
+    {% for order in customer_orders %}
 
-  <!-- STATS -->
-  <div class="row">
+    <div class="card shadow p-3 mb-3">
 
-    <div class="col-md-4 mb-3">
-      <div class="card text-center shadow-sm p-3">
-        <h5>Total Orders</h5>
-        <h2>{{ total_orders }}</h2>
-      </div>
-    </div>
+        <h5>
+            Order #{{ order.id }}
+        </h5>
 
-    <div class="col-md-4 mb-3">
-      <div class="card text-center shadow-sm p-3">
-        <h5>Pending Orders</h5>
-        <h2>{{ pending_orders }}</h2>
-      </div>
-    </div>
+        <p>
+            Date:
+            {{ order.order_date }}
+        </p>
 
-    <div class="col-md-4 mb-3">
-      <div class="card text-center shadow-sm p-3">
-        <h5>Completed Orders</h5>
-        <h2>{{ completed_orders }}</h2>
-      </div>
-    </div>
 
-  </div>
+        <table class="table">
 
-  <!-- RECENT ORDERS -->
-  <div class="card shadow-sm mt-4">
-    <div class="card-header">
-      <h5 class="mb-0">Recent Orders</h5>
-    </div>
+            <tr>
+                <th>Item</th>
+                <th>Qty</th>
+            </tr>
 
-    <div class="card-body">
 
-      {% if recent_orders %}
+            {% for item in order.items.all %}
 
-        {% for order in recent_orders %}
+            <tr>
+                <td>
+                    {{ item.food_item.name }}
+                </td>
 
-          <div class="border-bottom py-2">
+                <td>
+                    {{ item.quantity }}
+                </td>
+            </tr>
 
-            <strong>{{ order.product_name }}</strong><br>
+            {% endfor %}
 
-            <small class="text-muted">
-              Price: Rs {{ order.price }} |
-              Status: {{ order.status|default:"Pending" }} |
-              {{ order.created_at }}
-            </small>
 
-          </div>
+        </table>
 
-        {% endfor %}
 
-      {% else %}
-        <p>No recent orders found.</p>
-      {% endif %}
+        <p>
+            Payment Status:
+            {{ order.payment_status }}
+        </p>
+
+
+        <h5>
+            Total:
+            Rs. {{ order.total_price }}
+        </h5>
+
 
     </div>
-  </div>
+
+
+    {% empty %}
+
+    <h4>
+        No Orders Found
+    </h4>
+
+    {% endfor %}
+
 
 </div>
 

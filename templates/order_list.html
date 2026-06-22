@@ -50,7 +50,11 @@
                 <tr>
                   <td>{{ order.id }}</td>
 
-                  <td>{{ order.customer.name }}</td>
+                  <td>
+                    <a href="{% url 'customer_record' order.customer.id %}" class="text-decoration-none fw-bold">
+                      {{ order.customer.name }}
+                    </a> 
+                  </td>
 
                   <td>{{ order.order_date|date:"d M Y H:i" }}</td>
 

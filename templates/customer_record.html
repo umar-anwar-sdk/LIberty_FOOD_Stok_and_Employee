@@ -1,0 +1,136 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="container mt-4">
+
+    <!-- Customer Details -->
+    <div class="card shadow mb-4">
+        <div class="card-header bg-primary text-white">
+            <h3 class="mb-0">👤 Customer Profile</h3>
+        </div>
+
+        <div class="card-body">
+            <h4>{{ customer.name }}</h4>
+
+            <p>
+                <strong>E-Mail: </strong>
+                {{ customer.user.email  }}
+            </p>
+
+            <p>
+                <strong>Phone:</strong>
+                {{ customer.phone }}
+            </p>
+
+            <p>
+                <strong>Address:</strong>
+                {{ customer.address }}
+            </p>
+
+            <p>
+                <strong>Total Orders:</strong>
+                {{ orders.count }}
+            </p>
+        </div>
+    </div>
+
+    <!-- Order History -->
+    <div class="card shadow">
+        <div class="card-header bg-dark text-white">
+            <h4 class="mb-0">📦 Order History</h4>
+        </div>
+
+        <div class="card-body">
+
+            {% for order in orders %}
+
+            <div class="border rounded p-3 mb-3">
+
+                <div class="d-flex justify-content-between">
+
+                    <h5>Order #{{ order.id }}</h5>
+
+                    {% if order.payment_status == "Cleared" %}
+                    <span class="badge bg-success">
+                        Cleared
+                    </span>
+                    {% else %}
+                    <span class="badge bg-danger">
+                        Pending
+                    </span>
+                    {% endif %}
+
+                </div>
+
+                <small class="text-muted">
+                    {{ order.order_date }}
+                </small>
+
+                <hr>
+
+                <table class="table table-sm">
+                    <thead>
+                        <tr>
+                            <th>Item</th>
+                            <th>Qty</th>
+                            <th>Price</th>
+                            <th>Subtotal</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+
+                        {% for item in order.items.all %}
+                        <tr>
+                            <td>{{ item.food_item.name }}</td>
+                            <td>{{ item.quantity }}</td>
+                            <td>Rs. {{ item.food_item.price }}</td>
+                            <td>
+                                Rs.
+                                {% widthratio item.food_item.price 1 item.quantity %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+
+                    </tbody>
+                </table>
+
+                <div class="text-end mt-2">
+
+                    <strong>Total Bill:</strong>
+                    Rs. {{ order.total_price|floatformat:2 }}
+
+                    <br>
+
+                    <strong>Paid:</strong>
+                    Rs. {{ order.paid_amount|floatformat:2 }}
+
+                    <br>
+
+                    <strong>Remaining:</strong>
+                    Rs. {{ order.remaining_amount|floatformat:2 }}
+
+                </div>
+                {% if order.payment_status == "Pending" %}
+                <a href="{% url 'update_payment' order.id %}" class="btn btn-success btn-sm mt-2">
+                    💰 Receive Payment
+                </a>
+                {% endif %}
+
+            </div>
+
+            {% empty %}
+
+            <div class="alert alert-warning">
+                No orders found for this customer.
+            </div>
+
+            {% endfor %}
+
+        </div>
+    </div>
+
+</div>
+
+{% endblock %}

@@ -54,6 +54,7 @@ def home(request):
             .prefetch_related("items__food_item")
             .order_by("-id")[:5]
         )
+        
 
         for order in recent_orders:
             order.total_price = sum(
@@ -120,11 +121,16 @@ def home(request):
     # ---------------- CUSTOMER ---------------- #
 
     elif request.user.role == 'customer':
+        print("CUSTOMER BLOCK RUNNING")
 
         customer_orders = Order.objects.filter(
             customer__user=request.user
         ).order_by("-id")
+        print("================")
+        print("USER:", request.user)
 
+        print("ORDERS:", customer_orders.count())
+        print("================")
         return render(
             request,
             "customer.html",
@@ -342,21 +348,31 @@ def order_detail(request, pk):
         "items": OrderItem.objects.filter(order=order)
     })
 
-
 @login_required
 def create_order(request):
 
     customers = Customer.objects.all()
     food_items = FoodItem.objects.all()
-    
 
     if request.method == "POST":
 
-        customer = get_object_or_404(Customer, id=request.POST.get("customer"))
-        order = Order.objects.create(customer=customer)
-        
+        customer = get_object_or_404(
+            Customer,
+            id=request.POST.get("customer")
+        )
+
+        paid_amount = Decimal(request.POST.get("paid_amount") or 0)
+        # 1️⃣ Create Order with payment info
+        order = Order.objects.create(
+    customer=customer,
+    paid_amount=paid_amount,
+    payment_status="Pending"
+)
+
         food_ids = request.POST.getlist("food_item[]")
         quantities = request.POST.getlist("quantity[]")
+
+        total_created = False
 
         for fid, qty in zip(food_ids, quantities):
 
@@ -379,13 +395,28 @@ def create_order(request):
             food.quantity -= int(qty)
             food.save()
 
+            total_created = True
+
+        # agar koi item hi na ho
+        if not total_created:
+            order.delete()
+            messages.error(request, "No items selected")
+            return redirect("order_list")
+        total_bill = order.total_price()
+
+        if order.paid_amount >= total_bill:
+            order.payment_status = "Cleared"
+        else:
+            order.payment_status = "Pending"
+
+        order.save()
+        messages.success(request, "Order created successfully")
         return redirect("order_list")
 
     return render(request, "create_order.html", {
         "customers": customers,
         "food_items": food_items
     })
-
 @manager_required
 def order_edit(request, pk):
 
