@@ -57,7 +57,7 @@ def home(request):
         
 
         for order in recent_orders:
-            order.total_price = sum(
+            order.total_price == sum(
             item.food_item.price * item.quantity
             for item in order.items.all()
     )
@@ -123,8 +123,12 @@ def home(request):
     elif request.user.role == 'customer':
         print("CUSTOMER BLOCK RUNNING")
 
+        customer = Customer.objects.get(
+            user=request.user
+        )
+
         customer_orders = Order.objects.filter(
-            customer__user=request.user
+            customer=customer
         ).order_by("-id")
         print("================")
         print("USER:", request.user)
@@ -135,6 +139,7 @@ def home(request):
             request,
             "customer.html",
             {
+                "customer":customer,
                 "customer_orders": customer_orders
             }
         )
@@ -402,7 +407,7 @@ def create_order(request):
             order.delete()
             messages.error(request, "No items selected")
             return redirect("order_list")
-        total_bill = order.total_price()
+        total_bill = order.total_price
 
         if order.paid_amount >= total_bill:
             order.payment_status = "Cleared"

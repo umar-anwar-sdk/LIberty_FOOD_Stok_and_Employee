@@ -4,6 +4,7 @@ from django.contrib import messages
 from django.contrib.auth import get_user_model
 from django.contrib.auth.hashers import make_password
 from django.contrib.auth.decorators import login_required
+from core_app.models import Customer
 
 
 User = get_user_model()
@@ -15,14 +16,20 @@ def login_view(request):
         email = request.POST.get("email")
         password = request.POST.get("password")
 
+        print("EMAIL:", email)
+        print("PASSWORD:", password)
+
         try:
             user_obj = User.objects.get(email=email)
+
+            print("FOUND USER:", user_obj.username)
 
             user = authenticate(
                 request,
                 username=user_obj.username,
                 password=password
             )
+            print("AUTH USER:", user)
 
         except User.DoesNotExist:
             user = None
@@ -59,8 +66,17 @@ def signup_view(request):
             return redirect("signup")
 
         # Check existing email
+        # Check if already user exists
         if User.objects.filter(email=email).exists():
             messages.error(request, "Email already exists")
+            return redirect("signup")
+
+
+# Check customer record
+        customer = Customer.objects.filter(email=email).first()
+
+        if not customer:
+            messages.error(request, "This email is not registered as a customer")
             return redirect("signup")
 
         # Username generate from email
@@ -73,11 +89,15 @@ def signup_view(request):
         # Create user
         user = User.objects.create(
             username=username,
-            first_name=first_name,
+            first_name=customer.name,
             last_name=last_name,
             email=email,
             password=make_password(password),
-        )
+            role="customer"
+)
+
+        customer.user = user
+        customer.save()
 
         messages.success(request, "Account created successfully")
         return redirect("login")

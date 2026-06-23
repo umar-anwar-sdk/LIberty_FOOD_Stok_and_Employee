@@ -14,7 +14,10 @@ from accounts.models import CustomUser
 from .models import Employee, EmployeeTransaction
 from django.http import HttpResponse
 from django.contrib.auth.decorators import login_required
-
+from accounts.decoraters import (
+    manager_required,
+    employee_required,
+)
 
 
 
@@ -23,30 +26,20 @@ def customer_list(request):
     customers = Customer.objects.all()
     return render(request, "customer_list.html", {"customers": customers})
 
-
+@employee_required
 def customer_add(request):
     if request.method == "POST":
         name = request.POST.get("name")
         address = request.POST.get("address")
         phone = request.POST.get("phone")
         email = request.POST.get("email")
-        password = request.POST.get("password")
-
         if not email:
             email = f"user{phone}@gmail.com"  # temporary unique hack
 
-        if CustomUser.objects.filter(username=email).exists():
+        if CustomUser.objects.filter(email=email).exists():
             return HttpResponse("User already exists")
 
-        user = CustomUser.objects.create_user(
-            username=email,
-            email=email,
-            first_name=name,
-            password=password
-        )
-
         Customer.objects.create(
-            user=user,
             name=name,
             email=email,
             address=address,
@@ -57,7 +50,7 @@ def customer_add(request):
 
     return render(request, "customer_form.html")
 
-
+@employee_required
 def customer_remove(request):
     if request.method == "POST":
         customer_id = request.POST.get("customer_id")
@@ -67,7 +60,7 @@ def customer_remove(request):
 
 
 # ---------------- EMPLOYEES ---------------- #
-
+@manager_required
 def employee_add(request):
     if request.method == "POST":
         first_name = request.POST.get("first_name")
@@ -104,19 +97,19 @@ def employee_add(request):
 
     return render(request, "employee_form.html")
 
-
+@manager_required
 def employee_list(request):
     employees = Employee.objects.all()
     return render(request, "employee_list.html", {"employees": employees})
 
-
+@manager_required
 def employee_delete(request, employee_id):
     if request.method == "POST":
         employee = get_object_or_404(Employee, id=employee_id)
         employee.delete()
         messages.success(request, f"{employee.first_name} {employee.last_name} has been deleted.")
     return redirect('employee_list')
-
+@manager_required
 def employee_detail(request, employee_id):
     employee = get_object_or_404(Employee, id=employee_id)
 
@@ -241,7 +234,7 @@ def employee_detail(request, employee_id):
         "summary": summary,
     })
 
-
+@manager_required
 def end_job(request, employee_id):
     employee = get_object_or_404(Employee, id=employee_id)
     employee.is_active = False
@@ -249,7 +242,7 @@ def end_job(request, employee_id):
 
     messages.success(request, "Employee job ended successfully")
     return redirect("employee_list")
-
+@manager_required
 def calculate_salary(request, employee_id):
     employee = get_object_or_404(Employee, id=employee_id)
     transactions = EmployeeTransaction.objects.filter(employee=employee)
@@ -294,6 +287,7 @@ def calculate_salary(request, employee_id):
             })
 
     return render(request, "calculate_salary.html", context)
+@manager_required
 def customer_record(request, id):
 
     customer = Customer.objects.get(id=id)
@@ -314,7 +308,7 @@ def customer_record(request, id):
     )
 
 
-@login_required
+@manager_required
 def update_payment(request, id):
 
     order = get_object_or_404(Order, id=id)
@@ -325,7 +319,7 @@ def update_payment(request, id):
 
         order.paid_amount = order.paid_amount + amount
 
-        if order.paid_amount >= order.total_price():
+        if order.paid_amount >= order.total_price:
             order.payment_status = "Cleared"
         else:
             order.payment_status = "Pending"

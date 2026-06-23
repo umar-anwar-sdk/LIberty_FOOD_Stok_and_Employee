@@ -90,14 +90,15 @@ class Order(models.Model):
         decimal_places=2,
         default=0
     )
-
+    @property
     def total_price(self):
         return sum(
             item.food_item.price * item.quantity
             for item in self.items.all()
-        )
+      )
+    @property
     def remaining_amount(self):
-        return self.total_price() - self.paid_amount
+        return self.total_price - self.paid_amount
 
 
 # 🔹 Order Items

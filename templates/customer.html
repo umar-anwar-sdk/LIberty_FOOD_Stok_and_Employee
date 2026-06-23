@@ -2,81 +2,641 @@
 
 {% block content %}
 
-<div class="container mt-4">
+<style>
+    body {
+        background: #ffffff;
+        font-family: 'Segoe UI', sans-serif;
+    }
 
-    <h2>
-        Welcome {{ customer.name }}
-    </h2>
 
-    <h4>
-        Total Orders: {{ customer_orders.count }}
-    </h4>
+    /* Main Container */
+
+    .orders-container {
+        padding: 40px;
+    }
+
+
+
+    /* Welcome Header */
+
+    .welcome-box {
+
+        background: linear-gradient(135deg,
+                #2563eb,
+                #7c3aed);
+
+        color: white;
+
+        padding: 35px;
+
+        border-radius: 25px;
+
+        margin-bottom: 35px;
+
+        box-shadow:
+            0 20px 40px rgba(37, 99, 235, .25);
+
+    }
+
+
+    .welcome-box h2 {
+
+        font-size: 38px;
+
+        font-weight: 800;
+
+        margin-bottom: 10px;
+
+    }
+
+
+
+    .welcome-box h4 {
+
+        opacity: .9;
+
+    }
+
+
+
+
+
+    /* Order Card */
+
+    .order-card {
+
+        background: white;
+
+        border-radius: 25px;
+
+        padding: 30px;
+
+        margin-bottom: 30px;
+
+        border: 1px solid #e5e7eb;
+
+        position: relative;
+
+        overflow: hidden;
+
+        transition: .4s ease;
+
+
+    }
+
+
+
+    .order-card:before {
+
+        content: "";
+
+        position: absolute;
+
+        top: 0;
+
+        left: 0;
+
+        width: 100%;
+
+        height: 5px;
+
+        background: linear-gradient(90deg,
+                #2563eb,
+                #9333ea);
+
+    }
+
+
+
+    .order-card:hover {
+
+        transform: translateY(-10px);
+
+        box-shadow:
+
+            0 25px 50px rgba(0, 0, 0, .12);
+
+    }
+
+
+
+
+
+    /* Order Header */
+
+    .order-title {
+
+        display: flex;
+
+        justify-content: space-between;
+
+        align-items: center;
+
+    }
+
+
+
+    .order-title h3 {
+
+        color: #111827;
+
+        font-size: 25px;
+
+        font-weight: 800;
+
+    }
+
+
+
+
+    .status {
+
+        padding: 10px 20px;
+
+        border-radius: 50px;
+
+        background: #dcfce7;
+
+        color: #15803d;
+
+        font-weight: 700;
+
+        font-size: 14px;
+
+    }
+
+
+
+    .order-date {
+
+        color: #64748b;
+
+        margin-top: 15px;
+
+    }
+
+
+
+
+
+    /* TABLE DESIGN */
+
+
+    .custom-table {
+
+        margin-top: 25px;
+
+        border-radius: 20px;
+
+        overflow: hidden;
+
+        background: white;
+
+        border: 1px solid #e5e7eb;
+
+        box-shadow:
+
+            0 8px 25px rgba(15, 23, 42, .08);
+
+    }
+
+
+
+    .custom-table table {
+
+        margin: 0;
+
+        border-collapse: separate;
+
+        border-spacing: 0;
+
+    }
+
+
+
+
+    .custom-table thead th {
+
+        background: linear-gradient(135deg,
+                #2563eb,
+                #7c3aed);
+
+        color: white;
+
+        padding: 18px 20px;
+
+        border: none;
+
+        font-size: 15px;
+
+        letter-spacing: .5px;
+
+    }
+
+
+
+    .custom-table tbody td {
+
+        padding: 18px 20px;
+
+        color: #334155;
+
+        background: #fff;
+
+        border-bottom: 1px solid #f1f5f9;
+
+        font-size: 16px;
+
+        font-weight: 500;
+
+    }
+
+
+
+    .custom-table tbody tr {
+
+        transition: .35s ease;
+
+    }
+
+
+
+    .custom-table tbody tr:nth-child(even) td {
+
+        background: #f8fafc;
+
+    }
+
+
+
+    .custom-table tbody tr:hover {
+
+        transform: scale(1.015);
+
+        background: #eff6ff;
+
+        box-shadow:
+
+            0 5px 15px rgba(37, 99, 235, .12);
+
+    }
+
+
+
+    .custom-table tbody tr:last-child td {
+
+        border-bottom: none;
+
+    }
+
+
+
+
+
+    /* Food Item */
+
+    .food-name {
+
+        background: #eff6ff;
+
+        color: #2563eb;
+
+        padding: 8px 15px;
+
+        border-radius: 50px;
+
+        display: inline-block;
+
+        font-weight: 700;
+
+        transition: .3s;
+
+    }
+
+
+
+    .food-name:hover {
+
+        background: #2563eb;
+
+        color: white;
+
+        transform: translateX(5px);
+
+    }
+
+
+
+    /* Quantity */
+
+    .qty {
+
+        background: #fef3c7;
+
+        color: #b45309;
+
+        padding: 7px 15px;
+
+        border-radius: 50px;
+
+        font-weight: 800;
+
+    }
+
+
+
+
+    /* Money Cards */
+
+
+    .money-box {
+
+        display: grid;
+
+        grid-template-columns:
+            repeat(auto-fit, minmax(200px, 1fr));
+
+        gap: 15px;
+
+        margin-top: 25px;
+
+    }
+
+
+
+    .money-box span {
+
+        background: #f8fafc;
+
+        padding: 20px;
+
+        border-radius: 18px;
+
+        border: 1px solid #e5e7eb;
+
+        color: #334155;
+
+        transition: .3s;
+
+    }
+
+
+
+    .money-box span:hover {
+
+        background: #2563eb;
+
+        color: white;
+
+        transform: translateY(-6px);
+
+    }
+
+
+
+    .money-box strong {
+
+        display: block;
+
+        font-size: 14px;
+
+        margin-bottom: 8px;
+
+    }
+
+
+
+    /* Empty */
+
+    .empty {
+
+        background: #f8fafc;
+
+        padding: 50px;
+
+        border-radius: 25px;
+
+        text-align: center;
+
+        font-size: 25px;
+
+        color: #64748b;
+
+    }
+</style>
+
+
+
+
+
+<div class="container orders-container">
+
+
+
+    <div class="welcome-box">
+
+        <h2>
+            👋 Welcome {{ customer.name }}
+        </h2>
+
+        <h4>
+            Your Order History
+        </h4>
+
+    </div>
+
+
+
+
 
 
     {% for order in customer_orders %}
 
-    <div class="card shadow p-3 mb-3">
 
-        <h5>
-            Order #{{ order.id }}
-        </h5>
 
-        <p>
-            Date:
-            {{ order.order_date }}
+    <div class="order-card">
+
+
+
+        <div class="order-title">
+
+            <h3>
+                🧾 Order #{{ order.id }}
+            </h3>
+
+
+            <span class="status">
+
+                {{ order.payment_status }}
+
+            </span>
+
+
+        </div>
+
+
+
+
+        <p class="order-date">
+
+            📅 {{ order.order_date }}
+
         </p>
 
 
-        <table class="table">
-
-            <tr>
-                <th>Item</th>
-                <th>Qty</th>
-            </tr>
 
 
-            {% for item in order.items.all %}
-
-            <tr>
-                <td>
-                    {{ item.food_item.name }}
-                </td>
-
-                <td>
-                    {{ item.quantity }}
-                </td>
-            </tr>
-
-            {% endfor %}
 
 
-        </table>
+        <div class="custom-table">
 
 
-        <p>
-            Payment Status:
-            {{ order.payment_status }}
-        </p>
+            <table class="table">
 
 
-        <h5>
-            Total:
-            Rs. {{ order.total_price }}
-        </h5>
+                <thead>
+
+                    <tr>
+
+                        <th>
+                            🍔 Food Item
+                        </th>
+
+
+                        <th>
+                            Quantity
+                        </th>
+
+
+                    </tr>
+
+
+                </thead>
+
+
+
+
+                <tbody>
+
+
+                    {% for item in order.items.all %}
+
+
+                    <tr>
+
+
+                        <td>
+
+                            <span class="food-name">
+
+                                🍔 {{ item.food_item.name }}
+
+                            </span>
+
+                        </td>
+
+
+
+                        <td>
+
+                            <span class="qty">
+
+                                {{ item.quantity }}
+
+                            </span>
+
+                        </td>
+
+
+                    </tr>
+
+
+                    {% endfor %}
+
+
+
+                </tbody>
+
+
+
+            </table>
+
+
+        </div>
+
+
+
+
+
+
+        <div class="money-box">
+
+
+            <span>
+
+                <strong>
+                    💰 Total Bill
+                </strong>
+
+                Rs. {{ order.total_price|floatformat:2 }}
+
+            </span>
+
+
+
+            <span>
+
+                <strong>
+                    ✅ Paid Amount
+                </strong>
+
+                Rs. {{ order.paid_amount|floatformat:2 }}
+
+            </span>
+
+
+
+            <span>
+
+                <strong>
+                    ⚠️ Remaining
+                </strong>
+
+                Rs. {{ order.remaining_amount|floatformat:2 }}
+
+            </span>
+
+
+
+        </div>
+
+
 
 
     </div>
 
 
+
     {% empty %}
 
-    <h4>
-        No Orders Found
-    </h4>
+
+
+    <div class="empty">
+
+        😔 No Orders Found
+
+    </div>
+
+
 
     {% endfor %}
 
 
+
+
+
 </div>
+
+
 
 {% endblock %}

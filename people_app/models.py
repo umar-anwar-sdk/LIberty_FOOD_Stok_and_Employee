@@ -6,7 +6,7 @@ from django.conf import settings
 
 # 🔹 Customer Model
 class Customer(models.Model):
-    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, null=True, blank=True)
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, null=True, blank=True, unique=True)
     name = models.CharField(max_length=100)
     email = models.EmailField(null=True, blank=True)
     address = models.TextField()
