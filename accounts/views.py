@@ -1,47 +1,68 @@
+import logging
+
 from django.shortcuts import redirect, render
 from django.contrib.auth import authenticate, login, logout
 from django.contrib import messages
 from django.contrib.auth import get_user_model
 from django.contrib.auth.hashers import make_password
 from django.contrib.auth.decorators import login_required
+from accounts.decoraters import admin_required
 from core_app.models import Customer
+from people_app.models import Employee
 
 
 User = get_user_model()
+logger = logging.getLogger(__name__)
+
 
 def login_view(request):
-
     if request.method == "POST":
-
-        email = request.POST.get("email")
+        email = request.POST.get("email", "").strip().lower()
         password = request.POST.get("password")
 
-        print("EMAIL:", email)
-        print("PASSWORD:", password)
+        # Diagnostic trail: deliberately never log the password or its hash.
+        # These messages identify the exact request path and lookup outcomes.
+        user_record = User.objects.filter(email__iexact=email).first()
+        customer_record = (
+            Customer.objects.filter(user=user_record).first() if user_record else None
+        )
+        employee_record = (
+            Employee.objects.filter(user=user_record).first() if user_record else None
+        )
+        logger.info(
+            "auth login: path=%s email=%r user_id=%s role=%s active=%s "
+            "customer_id=%s employee_id=%s password_supplied=%s",
+            request.path,
+            email,
+            getattr(user_record, "pk", None),
+            getattr(user_record, "role", None),
+            getattr(user_record, "is_active", None),
+            getattr(customer_record, "pk", None),
+            getattr(employee_record, "pk", None),
+            bool(password),
+        )
 
-        try:
-            user_obj = User.objects.get(email=email)
-
-            print("FOUND USER:", user_obj.username)
-
-            user = authenticate(
-                request,
-                username=user_obj.username,
-                password=password
-            )
-            print("AUTH USER:", user)
-
-        except User.DoesNotExist:
-            user = None
+        # EmailBackend does the case-insensitive User lookup, check_password(),
+        # and is_active validation. Customer/Employee records never gate login.
+        user = authenticate(request, email=email, password=password)
+        logger.info(
+            "auth login result: path=%s email=%r authenticated_user_id=%s role=%s",
+            request.path,
+            email,
+            getattr(user, "pk", None),
+            getattr(user, "role", None),
+        )
 
         if user is not None:
-
             login(request, user)
-            
+            logger.info(
+                "auth login redirect: user_id=%s role=%s destination=home",
+                user.pk,
+                user.role,
+            )
             return redirect("home")
 
-        else:
-            messages.error(request, "Invalid credentials")
+        messages.error(request, "Invalid credentials")
 
     return render(request, "login.html")
 
@@ -51,14 +72,20 @@ def logout_view(request):
 
 
 def signup_view(request):
-
     if request.method == "POST":
-
         first_name = request.POST.get("first_name")
         last_name = request.POST.get("last_name")
-        email = request.POST.get("email")
+        email = request.POST.get("email", "").strip().lower()
         password = request.POST.get("password")
         confirm_password = request.POST.get("confirm_password")
+
+        logger.info(
+            "auth signup: path=%s email=%r password_supplied=%s confirmation_matches=%s",
+            request.path,
+            email,
+            bool(password),
+            password == confirm_password,
+        )
 
         # Validation
         if password != confirm_password:
@@ -67,15 +94,29 @@ def signup_view(request):
 
         # Check existing email
         # Check if already user exists
-        if User.objects.filter(email=email).exists():
+        existing_user = User.objects.filter(email__iexact=email).first()
+        logger.info(
+            "auth signup user lookup: email=%r user_id=%s",
+            email,
+            getattr(existing_user, "pk", None),
+        )
+        if existing_user:
             messages.error(request, "Email already exists")
             return redirect("signup")
 
 
-# Check customer record
-        customer = Customer.objects.filter(email=email).first()
+        # This check applies only to customer self-registration, never login.
+        customer = Customer.objects.filter(email__iexact=email).first()
+        logger.info(
+            "auth signup customer lookup: email=%r customer_id=%s; "
+            "missing_customer_triggers_registration_error=%s",
+            email,
+            getattr(customer, "pk", None),
+            customer is None,
+        )
 
         if not customer:
+            # This is the one and only line that emits the reported message.
             messages.error(request, "This email is not registered as a customer")
             return redirect("signup")
 
@@ -108,24 +149,16 @@ def signup_view(request):
 
 def dashboard_redirect(request):
 
-    if request.user.role == 'admin':
-        return redirect('home.html')
-
-    elif request.user.role == 'manager':
-        return redirect('manager.html')
-
-    elif request.user.role == 'employee':
-        return redirect('employee.html')
-
-    elif request.user.role == 'customer':
-        return redirect('customer.html')
+    # All roles use the existing root URL; ``home`` chooses its existing
+    # role-specific template and context.
+    return redirect('home')
     
 @login_required
 def profile(request):
     return render(request, 'profile.html')
 
 
-@login_required
+@admin_required
 def edit_profile(request):
 
     if request.method == "POST":
@@ -133,7 +166,11 @@ def edit_profile(request):
         user = request.user
         user.first_name = request.POST.get("first_name")
         user.last_name = request.POST.get("last_name")
-        user.email = request.POST.get("email")
+        email = request.POST.get("email", "").strip().lower()
+        if User.objects.filter(email__iexact=email).exclude(pk=user.pk).exists():
+            messages.error(request, "Email already exists")
+            return redirect("edit_profile")
+        user.email = email
         user.phone = request.POST.get("phone")
 
         if request.FILES.get("profile_image"):
@@ -144,4 +181,3 @@ def edit_profile(request):
         return redirect("profile")
 
     return render(request, "edit_profile.html")
-    

@@ -29,8 +29,26 @@ DEBUG = True
 ALLOWED_HOSTS = []
 
 AUTH_USER_MODEL = "accounts.CustomUser"
+AUTHENTICATION_BACKENDS = ["accounts.backends.EmailBackend"]
 LOGIN_URL = "login"
 LOGIN_REDIRECT_URL = "home"
+
+# Authentication diagnostics intentionally exclude passwords and hashes.  They
+# show the request path and lookup outcomes while investigating login issues.
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "handlers": {
+        "console": {"class": "logging.StreamHandler"},
+    },
+    "loggers": {
+        "accounts": {
+            "handlers": ["console"],
+            "level": "INFO",
+            "propagate": False,
+        },
+    },
+}
 
 INSTALLED_APPS = [
     'django.contrib.admin',

@@ -3,10 +3,12 @@ from django.db import models
 
 
 class CustomUser(AbstractUser):
+    # Email is the login identifier.  Keeping it unique prevents ambiguous
+    # case-insensitive authentication results.
+    email = models.EmailField(unique=True)
 
     ROLE_CHOICES = (
         ('admin', 'Admin'),
-        ('manager', 'Manager'),
         ('employee', 'Employee'),
         ('customer', 'Customer'),
     )
@@ -31,3 +33,7 @@ class CustomUser(AbstractUser):
 
     def __str__(self):
         return self.username
+
+    def save(self, *args, **kwargs):
+        self.email = (self.email or "").strip().lower()
+        super().save(*args, **kwargs)

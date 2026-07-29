@@ -8,7 +8,8 @@ from django.conf import settings
 class Customer(models.Model):
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, null=True, blank=True, unique=True)
     name = models.CharField(max_length=100)
-    email = models.EmailField(null=True, blank=True)
+    # The profile email mirrors the linked login email and is required/unique.
+    email = models.EmailField(unique=True)
     address = models.TextField()
     phone = models.CharField(max_length=20, null=True, blank=True)
 
@@ -18,6 +19,15 @@ class Customer(models.Model):
 
 # 🔹 Employee Model
 class Employee(models.Model):
+    # Required to establish a stable ownership boundary for employee data.
+    user = models.OneToOneField(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        unique=True,
+        related_name="employee_profile",
+    )
     first_name = models.CharField(max_length=50)
     last_name = models.CharField(max_length=50)
     position = models.CharField(max_length=100)

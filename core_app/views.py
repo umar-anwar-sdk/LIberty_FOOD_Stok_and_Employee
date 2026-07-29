@@ -9,11 +9,12 @@ from .models import Category, Dealer, FoodItem, Order, OrderItem
 from people_app.models import Customer, Employee
 from django.db.models.functions import ExtractMonth
 from django.contrib.auth.decorators import login_required
+from django.core.exceptions import PermissionDenied
 from django.db.models import Q
 
 from accounts.decoraters import (
-    manager_required,
-    employee_required,
+    admin_required,
+    is_admin,
 )
 
 # ---------------- HOME ---------------- #
@@ -23,7 +24,7 @@ def home(request):
 
     # ---------------- ADMIN & MANAGER ---------------- #
 
-    if request.user.role in ['admin', 'manager']:
+    if is_admin(request.user):
 
         total_employees = Employee.objects.count()
         total_food_items = FoodItem.objects.count()
@@ -107,16 +108,10 @@ def home(request):
     # ---------------- EMPLOYEE ---------------- #
 
     elif request.user.role == 'employee':
-
-        recent_orders = Order.objects.order_by("-id")[:5]
-
-        return render(
-            request,
-            "employee.html",
-            {
-                "recent_orders": recent_orders
-            }
-        )
+        # Employees have no operational/customer access.  Their dashboard is
+        # their own profile and read-only salary record.
+        employee = get_object_or_404(Employee, user=request.user)
+        return redirect("employee_detail", employee_id=employee.id)
 
     # ---------------- CUSTOMER ---------------- #
 
@@ -149,7 +144,7 @@ def home(request):
 
 # ---------------- CATEGORY ---------------- #
 
-@manager_required
+@admin_required
 def category_list(request):
 
     return render(request, "category_list.html", {
@@ -157,7 +152,7 @@ def category_list(request):
     })
 
 
-@manager_required
+@admin_required
 def add_category(request):
 
     if request.method == "POST":
@@ -173,7 +168,7 @@ def add_category(request):
     return render(request, "add_category.html")
 
 
-@manager_required
+@admin_required
 def fooditem_detail(request, pk):
 
     item = get_object_or_404(FoodItem, pk=pk)
@@ -187,7 +182,7 @@ def fooditem_detail(request, pk):
         "total_sold": total_sold
     })
 
-@manager_required
+@admin_required
 def category_edit(request, pk):
 
     category = get_object_or_404(Category, pk=pk)
@@ -200,7 +195,7 @@ def category_edit(request, pk):
     return render(request, "category_edit.html", {"category": category})
 
 
-@manager_required
+@admin_required
 def category_delete(request, pk):
 
     get_object_or_404(Category, pk=pk).delete()
@@ -209,7 +204,7 @@ def category_delete(request, pk):
 
 # ---------------- DEALER ---------------- #
 
-@manager_required
+@admin_required
 def dealer_list(request):
 
     return render(request, "dealer_list.html", {
@@ -217,7 +212,7 @@ def dealer_list(request):
     })
 
 
-@manager_required
+@admin_required
 def add_dealer(request):
 
     if request.method == "POST":
@@ -231,7 +226,7 @@ def add_dealer(request):
     return render(request, "add_dealer.html")
 
 
-@manager_required
+@admin_required
 def delete_dealer(request, id):
 
     dealer = get_object_or_404(Dealer, id=id)
@@ -243,7 +238,7 @@ def delete_dealer(request, id):
     return render(request, "confirm_delete.html", {"dealer": dealer})
 # ---------------- FOOD ---------------- #
 
-@employee_required
+@admin_required
 def fooditem_list(request):
 
     return render(request, "fooditem_list.html", {
@@ -251,7 +246,7 @@ def fooditem_list(request):
     })
 
 
-@manager_required
+@admin_required
 def fooditem_add(request):
 
     if request.method != "POST":
@@ -288,7 +283,7 @@ def fooditem_add(request):
     return redirect("fooditem_list")
 
 
-@manager_required
+@admin_required
 def fooditem_edit(request, pk):
 
     item = get_object_or_404(FoodItem, pk=pk)
@@ -309,7 +304,7 @@ def fooditem_edit(request, pk):
     })
 
 
-@manager_required
+@admin_required
 def fooditem_delete(request, pk):
 
     item = get_object_or_404(FoodItem, pk=pk)
@@ -317,7 +312,7 @@ def fooditem_delete(request, pk):
     return redirect("fooditem_list")
 
 
-@employee_required
+@admin_required
 def add_food_quantity(request):
 
     if request.method == "POST":
@@ -335,7 +330,7 @@ def add_food_quantity(request):
 
 # ---------------- ORDERS ---------------- #
 
-@employee_required
+@admin_required
 def order_list(request):
 
     return render(request, "order_list.html", {
@@ -345,15 +340,20 @@ def order_list(request):
 
 @login_required
 def order_detail(request, pk):
-
-    order = get_object_or_404(Order, pk=pk)
+    # Customer URLs are ownership-scoped, preventing IDOR by changing pk.
+    if is_admin(request.user):
+        order = get_object_or_404(Order, pk=pk)
+    elif request.user.role == "customer":
+        order = get_object_or_404(Order, pk=pk, customer__user=request.user)
+    else:
+        raise PermissionDenied("You do not have permission to access this order.")
 
     return render(request, "order_detail.html", {
         "order": order,
         "items": OrderItem.objects.filter(order=order)
     })
 
-@login_required
+@admin_required
 def create_order(request):
 
     customers = Customer.objects.all()
@@ -422,7 +422,7 @@ def create_order(request):
         "customers": customers,
         "food_items": food_items
     })
-@manager_required
+@admin_required
 def order_edit(request, pk):
 
     order = get_object_or_404(Order, pk=pk)
@@ -461,7 +461,7 @@ def order_edit(request, pk):
         return redirect("order_detail", pk=order.pk)
 
     return render(request, "order_edit.html", {"order": order})
-@manager_required
+@admin_required
 def update_order_status(request, pk):
     order = get_object_or_404(Order, pk=pk)
 
@@ -474,7 +474,7 @@ def update_order_status(request, pk):
 
     return redirect("order_list")
 
-@manager_required
+@admin_required
 def order_delete(request, pk):
 
     order = get_object_or_404(Order, pk=pk)
@@ -487,6 +487,7 @@ def order_delete(request, pk):
 
 
 
+@admin_required
 def dashboard(request):
     recent_orders = Order.objects.prefetch_related('items__food_item').order_by('-order_date')[:10]
 
@@ -502,6 +503,7 @@ def dashboard(request):
 
 
 # ---------------- SEARCH ---------------- #
+@admin_required
 def global_search(request):
     q = request.GET.get("q", "")
 
