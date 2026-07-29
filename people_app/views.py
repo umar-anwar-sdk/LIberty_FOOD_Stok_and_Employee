@@ -3,10 +3,10 @@ from django.core.exceptions import PermissionDenied
 from django.contrib.auth import get_user_model
 from django.db import transaction
 from django.contrib import messages
-from decimal import Decimal
-from datetime import datetime
+from decimal import Decimal, ROUND_HALF_UP
+from datetime import date, timedelta
 from uuid import uuid4
-from django.utils.timezone import now
+from django.utils.timezone import localdate
 from core_app.models import Order
 import calendar
 from django.db.models import Sum
@@ -23,6 +23,98 @@ from accounts.decoraters import (
     admin_required,
     is_admin,
 )
+
+
+MONEY_QUANTUM = Decimal("0.01")
+
+
+def round_money(value):
+    """Round calculated monetary values consistently for display and storage."""
+    return Decimal(value).quantize(MONEY_QUANTUM, rounding=ROUND_HALF_UP)
+
+
+def calculate_earned_salary(employee, period_start, period_end, *, as_of=None):
+    """Return earned salary for an inclusive period, capped at the current date.
+
+    The calculation starts on the later of the selected period and the
+    employee's joining date.  It applies each month's actual number of days,
+    so February and 30/31-day months are calculated correctly.
+    """
+    as_of = as_of or localdate()
+    effective_end = min(period_end, as_of)
+    effective_start = max(period_start, employee.join_date)
+
+    if effective_start > effective_end:
+        return Decimal("0.00"), None, None
+
+    earned_salary = Decimal("0.00")
+    cursor = effective_start
+    while cursor <= effective_end:
+        days_in_month = calendar.monthrange(cursor.year, cursor.month)[1]
+        month_end = date(cursor.year, cursor.month, days_in_month)
+        chunk_end = min(month_end, effective_end)
+        days_worked = (chunk_end - cursor).days + 1
+
+        daily_salary = Decimal(employee.base_salary) / Decimal(days_in_month)
+        earned_salary += daily_salary * Decimal(days_worked)
+        cursor = month_end + timedelta(days=1)
+
+    return round_money(earned_salary), effective_start, effective_end
+
+
+def cash_transaction_totals(employee, period_start, period_end):
+    """Return ORM totals for cash taken and cash added in the given period.
+
+    ``deposit`` is the existing database value for the UI's Cash Added /
+    adjustment action.  Both transaction categories are deductions from the
+    earned salary, as required by the current payroll rule.
+    """
+    if period_start is None or period_end is None:
+        return Decimal("0.00"), Decimal("0.00")
+
+    transactions = EmployeeTransaction.objects.filter(
+        employee=employee,
+        date__date__range=(period_start, period_end),
+    )
+    cash_taken = transactions.filter(transaction_type="taken").aggregate(
+        total=Sum("amount")
+    )["total"] or Decimal("0.00")
+    cash_added = transactions.filter(transaction_type="deposit").aggregate(
+        total=Sum("amount")
+    )["total"] or Decimal("0.00")
+    return round_money(cash_taken), round_money(cash_added)
+
+
+def current_month_salary(employee, *, as_of=None):
+    """Calculate current earned and remaining salary without relying on stale rows."""
+    as_of = as_of or localdate()
+    month_start = as_of.replace(day=1)
+    earned_salary, period_start, period_end = calculate_earned_salary(
+        employee, month_start, as_of, as_of=as_of
+    )
+    cash_taken, cash_added = cash_transaction_totals(
+        employee, period_start, period_end
+    )
+    days_in_month = calendar.monthrange(as_of.year, as_of.month)[1]
+    daily_salary = round_money(Decimal(employee.base_salary) / Decimal(days_in_month))
+    days_worked = (
+        (period_end - period_start).days + 1
+        if period_start is not None
+        else 0
+    )
+    # Both Cash Taken and Cash Added are payroll deductions.
+    remaining_salary = round_money(earned_salary - cash_taken - cash_added)
+    return {
+        "month_start": month_start,
+        "daily_salary": daily_salary,
+        "days_worked": days_worked,
+        "earned_salary": earned_salary,
+        "cash_taken": cash_taken,
+        "cash_added": cash_added,
+        "remaining_salary": remaining_salary,
+        "period_start": period_start,
+        "period_end": period_end,
+    }
 
 
 
@@ -205,60 +297,54 @@ def employee_detail(request, employee_id):
         employee = get_object_or_404(Employee, id=employee_id)
         can_manage_salary = True
     elif request.user.role == "employee":
-        employee = get_object_or_404(Employee, id=employee_id, user=request.user)
+        # Do not trust the employee id from the URL: it must belong to the
+        # authenticated employee before any salary data is read.
+        employee = Employee.objects.filter(id=employee_id, user=request.user).first()
+        if employee is None:
+            raise PermissionDenied("You can only access your own employee record.")
         can_manage_salary = False
         if request.method != "GET":
             raise PermissionDenied("Employees cannot modify salary or payroll information.")
     else:
         raise PermissionDenied("You do not have permission to access employee salary data.")
 
-    today = now().date()
-    month_start = today.replace(day=1)
-    total_days_in_month = calendar.monthrange(today.year, today.month)[1]
+    salary_data = current_month_salary(employee)
 
-    join_date = employee.join_date
-    if hasattr(join_date, "date"):
-        join_date = join_date.date()
-
-    # ---------------- SALARY CALCULATION ----------------
-    monthly_salary = employee.base_salary
-
-    # If employee joined in current month
-    if join_date and join_date >= month_start:
-
-        per_day_salary = employee.base_salary / Decimal(total_days_in_month)
-
-        remaining_days = (total_days_in_month - join_date.day) + 1
-
-        if remaining_days < 0:
-            remaining_days = 0
-
-        monthly_salary = per_day_salary * Decimal(remaining_days)
-
-    # ---------------- SALARY RECORD ----------------
+    # The monthly row remains the transaction parent, but all monetary fields
+    # are recalculated from the source transactions on every request.
     if can_manage_salary:
         salary_record, _ = EmployeeSalary.objects.get_or_create(
-            employee=employee, month=month_start,
-            defaults={"total_salary": monthly_salary, "remaining_salary": monthly_salary,
-                      "advance_amount": Decimal("0")},
+            employee=employee,
+            month=salary_data["month_start"],
+            defaults={
+                "total_salary": salary_data["earned_salary"],
+                "remaining_salary": salary_data["remaining_salary"],
+                "advance_amount": salary_data["cash_taken"],
+            },
         )
-        salary_record.total_salary = monthly_salary
-        if not salary_record.transactions.exists():
-            salary_record.remaining_salary = monthly_salary
-        salary_record.save()
+        salary_record.total_salary = salary_data["earned_salary"]
+        salary_record.remaining_salary = salary_data["remaining_salary"]
+        salary_record.advance_amount = salary_data["cash_taken"]
+        salary_record.save(
+            update_fields=["total_salary", "remaining_salary", "advance_amount"]
+        )
     else:
-        # Viewing must not create or alter a payroll record.  When an admin has
-        # not generated this month's record yet, render an in-memory estimate
-        # rather than denying the employee access to their own salary page.
-        salary_record = EmployeeSalary.objects.filter(employee=employee, month=month_start).first()
+        # Employee reads never create or alter payroll rows.
+        salary_record = EmployeeSalary.objects.filter(
+            employee=employee, month=salary_data["month_start"]
+        ).first()
         if salary_record is None:
             salary_record = EmployeeSalary(
                 employee=employee,
-                month=month_start,
-                total_salary=monthly_salary,
-                remaining_salary=monthly_salary,
-                advance_amount=Decimal("0"),
+                month=salary_data["month_start"],
+                total_salary=salary_data["earned_salary"],
+                remaining_salary=salary_data["remaining_salary"],
+                advance_amount=salary_data["cash_taken"],
             )
+        else:
+            salary_record.total_salary = salary_data["earned_salary"]
+            salary_record.remaining_salary = salary_data["remaining_salary"]
+            salary_record.advance_amount = salary_data["cash_taken"]
 
     # ---------------- TRANSACTIONS ----------------
     if can_manage_salary and request.method == "POST" and "action" in request.POST:
@@ -275,63 +361,30 @@ def employee_detail(request, employee_id):
             messages.error(request, "Invalid amount")
             return redirect("employee_detail", employee_id=employee.id)
 
-        # CASH TAKEN
-        if action == "taken":
-            if salary_record.remaining_salary >= amount:
-                salary_record.remaining_salary -= amount
-            else:
-                extra = amount - salary_record.remaining_salary
-                salary_record.remaining_salary = Decimal("0")
-                salary_record.advance_amount += extra
-
+        if action in {"taken", "deposit"}:
             EmployeeTransaction.objects.create(
                 employee=employee,
                 salary_record=salary_record,
-                transaction_type="taken",
-                amount=amount,
+                transaction_type=action,
+                amount=round_money(amount),
                 reason=reason,
             )
-
-        # CASH DEPOSIT
-        elif action == "deposit":
-            if salary_record.advance_amount > 0:
-                if amount <= salary_record.advance_amount:
-                    salary_record.advance_amount -= amount
-                else:
-                    extra = amount - salary_record.advance_amount
-                    salary_record.advance_amount = Decimal("0")
-                    salary_record.remaining_salary += extra
-            else:
-                salary_record.remaining_salary += amount
-
-            EmployeeTransaction.objects.create(
-                employee=employee,
-                salary_record=salary_record,
-                transaction_type="deposit",
-                amount=amount,
-                reason=reason,
-            )
-
-        salary_record.save()
+        else:
+            messages.error(request, "Invalid transaction type")
         return redirect("employee_detail", employee_id=employee.id)
 
     # ---------------- DATA ----------------
-    if salary_record.pk:
-        transactions = salary_record.transactions.all().order_by("-date")
-        total_deposit = EmployeeTransaction.objects.filter(
-            salary_record=salary_record,
-            transaction_type="deposit",
-        ).aggregate(total=Sum("amount"))["total"] or Decimal("0")
-    else:
-        transactions = EmployeeTransaction.objects.none()
-        total_deposit = Decimal("0")
+    transactions = EmployeeTransaction.objects.filter(
+        employee=employee,
+        date__date__range=(salary_data["period_start"], salary_data["period_end"]),
+    ).order_by("-date") if salary_data["period_start"] else EmployeeTransaction.objects.none()
 
     summary = {
-        "total_salary": salary_record.total_salary,
-        "worked_days_salary": monthly_salary,
-        "advance": salary_record.advance_amount,
-        "deposit": total_deposit,
-        "remaining": salary_record.remaining_salary,
+        "total_salary": salary_data["earned_salary"],
+        "worked_days_salary": salary_data["earned_salary"],
+        "advance": salary_data["cash_taken"],
+        "deposit": salary_data["cash_added"],
+        "remaining": salary_data["remaining_salary"],
     }
 
     return render(request, "employee_detail.html", {
@@ -339,6 +392,9 @@ def employee_detail(request, employee_id):
         "salary_record": salary_record,
         "transactions": transactions,
         "summary": summary,
+        # Templates use this capability only for visibility.  The view above
+        # remains the source of truth for every write operation.
+        "can_manage_salary": can_manage_salary,
     })
 
 @admin_required
@@ -372,29 +428,21 @@ def calculate_salary(request, employee_id):
         to_date = parse_date(request.POST.get("to_date"))
 
         if from_date and to_date:
-            # daily salary (fixed 30 days logic same as tumhara system)
-            daily_salary = employee.base_salary / Decimal(30)
-
-            days = (to_date - from_date).days + 1
-            if days < 0:
-                days = 0
-
-            calculated_salary = daily_salary * Decimal(days)
-
-            # advance taken (same pattern as tumhare code)
-            advance_used = EmployeeTransaction.objects.filter(
-                employee=employee,
-                transaction_type="taken",
-                date__date__range=[from_date, to_date]
-            ).aggregate(total=Sum("amount"))["total"] or Decimal("0")
-
-            remaining_salary = calculated_salary - advance_used
+            calculated_salary, period_start, period_end = calculate_earned_salary(
+                employee, from_date, to_date
+            )
+            advance_used, cash_added = cash_transaction_totals(
+                employee, period_start, period_end
+            )
+            remaining_salary = round_money(
+                calculated_salary - advance_used - cash_added
+            )
 
             context.update({
                 "calculated_salary": calculated_salary,
                 "advance_used": advance_used,
                 "remaining_salary": remaining_salary,
-                "period": f"{from_date} to {to_date}",
+                "period": f"{period_start} to {period_end}" if period_start else "No worked days",
             })
 
     return render(request, "calculate_salary.html", context)

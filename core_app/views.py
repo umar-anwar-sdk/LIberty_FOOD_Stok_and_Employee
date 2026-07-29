@@ -116,20 +116,11 @@ def home(request):
     # ---------------- CUSTOMER ---------------- #
 
     elif request.user.role == 'customer':
-        print("CUSTOMER BLOCK RUNNING")
-
-        customer = Customer.objects.get(
-            user=request.user
-        )
+        customer = get_object_or_404(Customer, user=request.user)
 
         customer_orders = Order.objects.filter(
             customer=customer
-        ).order_by("-id")
-        print("================")
-        print("USER:", request.user)
-
-        print("ORDERS:", customer_orders.count())
-        print("================")
+        ).prefetch_related("items__food_item").order_by("-id")
         return render(
             request,
             "customer.html",
@@ -344,7 +335,11 @@ def order_detail(request, pk):
     if is_admin(request.user):
         order = get_object_or_404(Order, pk=pk)
     elif request.user.role == "customer":
-        order = get_object_or_404(Order, pk=pk, customer__user=request.user)
+        # Scope the lookup itself to the authenticated customer's account so
+        # an id changed in the URL can never expose another customer's order.
+        order = Order.objects.filter(pk=pk, customer__user=request.user).first()
+        if order is None:
+            raise PermissionDenied("You can only access your own orders.")
     else:
         raise PermissionDenied("You do not have permission to access this order.")
 
