@@ -1,69 +1,12 @@
 {% extends 'base.html' %}
+{% block title %}Search · Liberty Food{% endblock %}
 {% block content %}
-
-<div class="content-wrapper p-4">
-
-    <h3 class="mb-4">Search Results for "{{ query }}"</h3>
-
-    <!-- FOOD -->
-    {% if food %}
-    <div class="mb-4">
-        <h5>🍔 Food</h5>
-
-        {% for item in food %}
-        <div class="card p-2 mb-2 shadow-sm">
-            <strong>{{ item.name }}</strong>
-        </div>
-        {% endfor %}
-    </div>
-    {% endif %}
-
-    <!-- CUSTOMERS -->
-    {% if customers %}
-    <div class="mb-4">
-        <h5>👤 Customers</h5>
-
-        {% for c in customers %}
-        <div class="card p-2 mb-2 shadow-sm">
-            {{ c.name }}
-        </div>
-        {% endfor %}
-    </div>
-    {% endif %}
-
-    <!-- EMPLOYEES -->
-    {% if employees %}
-    <div class="mb-4">
-        <h5>👨‍💼 Employees</h5>
-
-        {% for e in employees %}
-        <div class="card p-2 mb-2 shadow-sm">
-            {{ e.first_name }} {{ e.last_name }}
-        </div>
-        {% endfor %}
-    </div>
-    {% endif %}
-
-    <!-- ORDERS -->
-    {% if orders %}
-    <div class="mb-4">
-        <h5>📦 Orders</h5>
-
-        {% for o in orders %}
-        <div class="card p-2 mb-2 shadow-sm">
-            Order ID: <strong>{{ o.id }}</strong>
-        </div>
-        {% endfor %}
-    </div>
-    {% endif %}
-
-    <!-- NO RESULTS -->
-    {% if not food and not customers and not employees and not orders %}
-    <div class="alert alert-warning mt-4">
-        No results found for "<strong>{{ query }}</strong>"
-    </div>
-    {% endif %}
-
+<section class="mb-7"><p class="text-xs font-semibold uppercase tracking-[.18em] text-indigo-600 dark:text-indigo-400">Global search</p><h1 class="mt-2 text-2xl font-extrabold text-slate-950 dark:text-white">Results for “{{ query }}”</h1><p class="mt-2 text-sm text-slate-500">Matches across inventory, customers, employees and orders.</p></section>
+<div class="grid gap-6 lg:grid-cols-2">
+  {% if food %}<section class="rounded-2xl border border-slate-200 bg-white p-5 shadow-soft dark:border-slate-800 dark:bg-slate-900"><h2 class="font-bold text-slate-900 dark:text-white">Food items</h2><div class="mt-4 space-y-2">{% for item in food %}<a href="{% url 'fooditem_detail' item.id %}" class="flex items-center justify-between rounded-xl border border-slate-100 px-4 py-3 text-sm font-semibold hover:border-indigo-200 hover:bg-indigo-50/40 dark:border-slate-800 dark:hover:bg-indigo-950/20">{{ item.name }}<span class="text-indigo-600">→</span></a>{% endfor %}</div></section>{% endif %}
+  {% if customers %}<section class="rounded-2xl border border-slate-200 bg-white p-5 shadow-soft dark:border-slate-800 dark:bg-slate-900"><h2 class="font-bold text-slate-900 dark:text-white">Customers</h2><div class="mt-4 space-y-2">{% for c in customers %}<a href="{% url 'customer_record' c.id %}" class="flex items-center justify-between rounded-xl border border-slate-100 px-4 py-3 text-sm font-semibold hover:border-indigo-200 hover:bg-indigo-50/40 dark:border-slate-800">{{ c.name }}<span class="text-indigo-600">→</span></a>{% endfor %}</div></section>{% endif %}
+  {% if employees %}<section class="rounded-2xl border border-slate-200 bg-white p-5 shadow-soft dark:border-slate-800 dark:bg-slate-900"><h2 class="font-bold text-slate-900 dark:text-white">Employees</h2><div class="mt-4 space-y-2">{% for e in employees %}<a href="{% url 'employee_detail' e.id %}" class="flex items-center justify-between rounded-xl border border-slate-100 px-4 py-3 text-sm font-semibold hover:border-indigo-200 hover:bg-indigo-50/40 dark:border-slate-800">{{ e.first_name }} {{ e.last_name }}<span class="text-indigo-600">→</span></a>{% endfor %}</div></section>{% endif %}
+  {% if orders %}<section class="rounded-2xl border border-slate-200 bg-white p-5 shadow-soft dark:border-slate-800 dark:bg-slate-900"><h2 class="font-bold text-slate-900 dark:text-white">Orders</h2><div class="mt-4 space-y-2">{% for o in orders %}<a href="{% url 'order_detail' o.id %}" class="flex items-center justify-between rounded-xl border border-slate-100 px-4 py-3 text-sm font-semibold hover:border-indigo-200 hover:bg-indigo-50/40 dark:border-slate-800"><span class="font-mono">Order #{{ o.id }}</span><span class="text-indigo-600">→</span></a>{% endfor %}</div></section>{% endif %}
 </div>
-
+{% if not food and not customers and not employees and not orders %}<div class="rounded-2xl border border-amber-200 bg-amber-50 p-10 text-center dark:border-amber-900 dark:bg-amber-950/30"><h2 class="font-bold text-amber-800 dark:text-amber-300">No results found</h2><p class="mt-2 text-sm text-amber-700 dark:text-amber-400">Try a different name, order ID or product keyword.</p></div>{% endif %}
 {% endblock %}

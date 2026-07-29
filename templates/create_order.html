@@ -1,203 +1,97 @@
 {% extends "base.html" %}
+{% block title %}Create Order · Liberty Food{% endblock %}
 {% block content %}
-
-<!-- Premium Header -->
-<div class="card border-0 shadow-lg rounded-4 overflow-hidden">
-
-    <div class="p-4 text-white" style="background: linear-gradient(135deg, #1e3c72, #2a5298); ">
-
-        <div class="d-flex justify-content-between align-items-center flex-wrap">
-
-            <div>
-                <h2 class="fw-bold mb-1">
-                    🛒 Create New Order
-                </h2>
-
-                <p class="mb-0 opacity-75">
-                    Add customer and select multiple food items
-                </p>
-            </div>
-
-        </div>
-
+<section class="mb-7"><p class="text-xs font-semibold uppercase tracking-[.18em] text-indigo-600 dark:text-indigo-400">Order management</p><h1 class="mt-2 text-2xl font-extrabold text-slate-950 dark:text-white">Create new order</h1><p class="mt-2 text-sm text-slate-500">Select a customer, add products and record the initial payment.</p></section>
+<form method="post" id="orderForm" class="space-y-6">{% csrf_token %}
+  <section class="grid gap-5 rounded-2xl border border-slate-200 bg-white p-6 shadow-soft dark:border-slate-800 dark:bg-slate-900 md:grid-cols-2"><div><label class="mb-2 block text-sm font-semibold">Customer</label><select name="customer" required class="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 dark:border-slate-700 dark:bg-slate-950"><option value="">Select customer</option>{% for c in customers %}<option value="{{ c.id }}">{{ c.name }}</option>{% endfor %}</select></div><div><label class="mb-2 block text-sm font-semibold">Paid amount</label><div class="relative"><span class="absolute left-4 top-1/2 -translate-y-1/2 text-sm text-slate-400">Rs.</span><input type="number" step="0.01" name="paid_amount" value="0" class="w-full rounded-xl border border-slate-300 bg-white py-3 pl-12 pr-4 text-sm outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 dark:border-slate-700 dark:bg-slate-950"></div></div></section>
+  <div class="flex items-center justify-between"><div><h2 class="font-bold text-slate-900 dark:text-white">Order items</h2><p class="mt-1 text-xs text-slate-500">Add one or more products</p></div><button type="button" onclick="addProduct()" class="rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-2 text-sm font-semibold text-indigo-700 dark:border-indigo-900 dark:bg-indigo-950/40 dark:text-indigo-300">+ Add item</button></div>
+  <div id="productContainer" class="space-y-4"><section class="product-group relative rounded-2xl border border-slate-200 bg-white p-6 shadow-soft dark:border-slate-800 dark:bg-slate-900"><div class="mb-4 flex items-center justify-between"><p class="text-xs font-semibold uppercase tracking-wider text-slate-500">Product line</p><button type="button" onclick="removeProduct(this)" class="rounded-lg border border-red-200 px-3 py-1.5 text-xs font-semibold text-red-600 dark:border-red-900 dark:text-red-400">Remove</button></div><div class="grid gap-5 md:grid-cols-2 xl:grid-cols-4"><div class="md:col-span-2"><label class="mb-2 block text-sm font-semibold">Food item</label><select name="food_item[]" onchange="updatePrice(this)" required class="food-item w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 dark:border-slate-700 dark:bg-slate-950"><option value="">Select food item</option>{% for f in food_items %}<option value="{{ f.id }}" data-price="{{ f.price }}" data-stock="{{ f.quantity }}">{{ f.name }} · Stock {{ f.quantity }}</option>{% endfor %}</select></div><div><label class="mb-2 block text-sm font-semibold">Quantity</label><input type="number" name="quantity[]" min="1" value="1" oninput="calculateTotal(this)" required class="quantity w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 dark:border-slate-700 dark:bg-slate-950"></div><div><label class="mb-2 block text-sm font-semibold">Unit price</label><input type="text" readonly class="unit-price w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm dark:border-slate-800 dark:bg-slate-950"></div><div class="md:col-start-2 xl:col-start-4"><label class="mb-2 block text-sm font-semibold">Line total</label><input type="text" readonly class="total-price w-full rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-bold text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950/30"></div></div></section></div>
+  <section class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-soft dark:border-slate-800 dark:bg-slate-900">
+    <div class="border-b border-slate-100 px-6 py-4 dark:border-slate-800"><h2 class="font-bold text-slate-900 dark:text-white">Order summary</h2><p class="mt-1 text-xs text-slate-500">Live payment and balance calculation</p></div>
+    <div class="grid divide-y divide-slate-100 dark:divide-slate-800 sm:grid-cols-3 sm:divide-x sm:divide-y-0">
+      <div class="p-5"><p class="text-xs font-semibold uppercase tracking-wider text-slate-500">Order total</p><p id="summary-total" class="mt-2 text-xl font-extrabold text-slate-950 dark:text-white">Rs. 0.00</p></div>
+      <div class="p-5"><p class="text-xs font-semibold uppercase tracking-wider text-slate-500">Paid amount</p><p id="summary-paid" class="mt-2 text-xl font-extrabold text-emerald-600 dark:text-emerald-400">Rs. 0.00</p></div>
+      <div class="p-5"><p class="text-xs font-semibold uppercase tracking-wider text-slate-500">Balance due</p><p id="summary-balance" class="mt-2 text-xl font-extrabold text-amber-600 dark:text-amber-400">Rs. 0.00</p></div>
     </div>
-</div>
-<div class="container mt-4">
-
-    <div class="row g-4">
-
-        <!-- MAIN FORM -->
-        <div class="col-12">
-
-            <div class="card border-0 shadow-sm rounded-4 p-4">
-
-                <form method="post" id="orderForm">
-                    {% csrf_token %}
-
-                    <!-- CUSTOMER -->
-                    <div class="mb-4">
-                        <label class="form-label fw-semibold text-secondary">Customer</label>
-                        <select name="customer" class="form-select form-select-lg rounded-3" required>
-                            <option value="">Select Customer</option>
-                            {% for c in customers %}
-                            <option value="{{ c.id }}">{{ c.name }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">
-                            Paid Amount
-                        </label>
-
-                        <input type="number" step="0.01" name="paid_amount" class="form-control" value="0">
-                    </div>
-
-                    <hr class="opacity-25">
-
-                    <!-- HEADER ROW -->
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h5 class="fw-bold mb-0">🍽 Order Items</h5>
-
-                        <button type="button" class="btn btn-primary btn-sm rounded-3 px-3" onclick="addProduct()">
-                            ➕ Add Item
-                        </button>
-                    </div>
-
-                    <!-- ITEMS -->
-                    <div id="productContainer">
-
-                        <div class="product-group border rounded-4 p-3 mb-3 bg-light">
-
-                            <div class="d-flex justify-content-between mb-2">
-                                <small class="text-muted fw-semibold">Item #1</small>
-                            </div>
-
-                            <select name="food_item[]" class="form-select food-item rounded-3 mb-3"
-                                onchange="updatePrice(this)" required>
-
-                                <option value="">Select Food Item</option>
-
-                                {% for f in food_items %}
-                                <option value="{{ f.id }}" data-price="{{ f.price }}" data-stock="{{ f.quantity }}">
-                                    {{ f.name }} • Stock {{ f.quantity }}
-                                </option>
-                                {% endfor %}
-
-                            </select>
-
-                            <div class="row g-3">
-
-                                <div class="col-md-4">
-                                    <label class="form-label text-muted">Qty</label>
-                                    <input type="number" name="quantity[]" class="form-control quantity rounded-3"
-                                        min="1" value="1" oninput="calculateTotal(this)" required>
-                                </div>
-
-                                <div class="col-md-4">
-                                    <label class="form-label text-muted">Price</label>
-                                    <input type="text" class="form-control unit-price bg-white rounded-3" readonly>
-                                </div>
-
-                                <div class="col-md-4">
-                                    <label class="form-label text-muted">Total</label>
-                                    <input type="text"
-                                        class="form-control total-price bg-white fw-bold text-success rounded-3"
-                                        readonly>
-                                </div>
-
-                            </div>
-
-                            <div class="text-end mt-3">
-                                <button type="button" class="btn btn-outline-danger btn-sm rounded-3"
-                                    onclick="removeProduct(this)">
-                                    Remove
-                                </button>
-                            </div>
-
-                        </div>
-
-                    </div>
-
-                    <!-- ACTIONS -->
-                    <div class="d-flex justify-content-between mt-4">
-
-                        <a href="{% url 'order_list' %}" class="btn btn-outline-secondary rounded-3 px-4">
-                            ⬅ Back
-                        </a>
-
-                        <button type="submit" class="btn btn-success rounded-3 px-4">
-                            ✅ Place Order
-                        </button>
-
-                    </div>
-                    
-
-                </form>
-
-            </div>
-
-        </div>
-
-    </div>
-
-</div>
-
-<script>
-
-    function updatePrice(select) {
-
-        const group = select.closest('.product-group');
-
-        const price = select.options[select.selectedIndex]
-            ?.getAttribute('data-price') || '';
-
-        group.querySelector('.unit-price').value = price;
-
-        calculateTotal(select);
-
-    }
-
-    function calculateTotal(element) {
-
-        const group = element.closest('.product-group');
-
-        const qty = parseFloat(group.querySelector('.quantity').value) || 0;
-
-        const price = parseFloat(group.querySelector('.unit-price').value) || 0;
-
-        group.querySelector('.total-price').value = (qty * price).toFixed(2);
-
-    }
-
-    function addProduct() {
-        const container = document.getElementById('productContainer');
-
-        const first = container.children[0];
-        const newGroup = first.cloneNode(true);
-
-        // reset values properly
-        newGroup.querySelectorAll('input, select').forEach(el => {
-            if (el.tagName === "SELECT") {
-                el.selectedIndex = 0;
-            } else {
-                el.value = "";
-            }
-        });
-
-        container.appendChild(newGroup);
-    }
-    function removeProduct(button) {
-
-        const container = document.getElementById('productContainer');
-
-        if (container.children.length > 1) {
-            button.closest('.product-group').remove();
-        } else {
-            alert("At least one product is required.");
-        }
-
-    }
-
-</script>
-
+    <p id="order-warning" class="hidden border-t border-red-200 bg-red-50 px-6 py-3 text-sm font-semibold text-red-700 dark:border-red-900 dark:bg-red-950/40 dark:text-red-300"></p>
+  </section>
+  <div class="flex flex-col-reverse gap-3 border-t border-slate-200 pt-6 dark:border-slate-800 sm:flex-row sm:justify-end"><a href="{% url 'order_list' %}" class="inline-flex justify-center rounded-xl border border-slate-300 px-5 py-2.5 text-sm font-semibold dark:border-slate-700">Cancel</a><button type="submit" class="rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-indigo-600/20 hover:bg-indigo-700">Place order</button></div>
+</form>
 {% endblock %}
+{% block scripts %}<script>
+const money = value => `Rs. ${Number(value || 0).toFixed(2)}`;
+
+function refreshOrderSummary() {
+  const groups = Array.from(document.querySelectorAll('.product-group'));
+  const total = groups.reduce((sum, group) => sum + (parseFloat(group.querySelector('.total-price').value) || 0), 0);
+  const paidInput = document.querySelector('[name="paid_amount"]');
+  const paid = Math.max(0, parseFloat(paidInput.value) || 0);
+  const balance = Math.max(0, total - paid);
+  document.getElementById('summary-total').textContent = money(total);
+  document.getElementById('summary-paid').textContent = money(paid);
+  document.getElementById('summary-balance').textContent = money(balance);
+
+  const warnings = [];
+  groups.forEach(group => {
+    const select = group.querySelector('.food-item');
+    const option = select.options[select.selectedIndex];
+    const stock = parseFloat(option?.dataset.stock) || 0;
+    const quantity = parseFloat(group.querySelector('.quantity').value) || 0;
+    group.querySelector('.quantity').classList.toggle('border-red-400', Boolean(option?.value && quantity > stock));
+    if (option?.value && quantity > stock) warnings.push(`${option.textContent.split('·')[0].trim()}: only ${stock} in stock`);
+  });
+  if (paid > total && total > 0) warnings.push('Paid amount is greater than the order total.');
+  const warningBox = document.getElementById('order-warning');
+  warningBox.textContent = warnings.join(' • ');
+  warningBox.classList.toggle('hidden', warnings.length === 0);
+
+  document.querySelectorAll('.product-group button[onclick*="removeProduct"]').forEach(button => {
+    button.disabled = groups.length === 1;
+    button.classList.toggle('opacity-40', groups.length === 1);
+    button.classList.toggle('cursor-not-allowed', groups.length === 1);
+  });
+}
+
+function updatePrice(select) {
+  const group = select.closest('.product-group');
+  group.querySelector('.unit-price').value = select.options[select.selectedIndex]?.dataset.price || '';
+  calculateTotal(select);
+}
+
+function calculateTotal(element) {
+  const group = element.closest('.product-group');
+  const quantity = parseFloat(group.querySelector('.quantity').value) || 0;
+  const price = parseFloat(group.querySelector('.unit-price').value) || 0;
+  group.querySelector('.total-price').value = (quantity * price).toFixed(2);
+  refreshOrderSummary();
+}
+
+function addProduct() {
+  const container = document.getElementById('productContainer');
+  const clone = container.children[0].cloneNode(true);
+  clone.querySelectorAll('input,select').forEach(element => {
+    if (element.tagName === 'SELECT') element.selectedIndex = 0;
+    else if (element.classList.contains('quantity')) element.value = 1;
+    else element.value = '';
+  });
+  container.appendChild(clone);
+  refreshOrderSummary();
+}
+
+function removeProduct(button) {
+  const container = document.getElementById('productContainer');
+  if (container.children.length <= 1) return;
+  button.closest('.product-group').remove();
+  refreshOrderSummary();
+}
+
+document.querySelector('[name="paid_amount"]')?.addEventListener('input', refreshOrderSummary);
+document.getElementById('orderForm')?.addEventListener('submit', event => {
+  const warning = document.getElementById('order-warning');
+  if (!warning.classList.contains('hidden') && warning.textContent.includes('only')) {
+    event.preventDefault();
+    warning.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+});
+refreshOrderSummary();
+</script>{% endblock %}

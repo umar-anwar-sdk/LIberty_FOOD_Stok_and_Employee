@@ -1,42 +1,5 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Manager Dashboard</title>
-</head>
-<body>
-
-<h1>Manager Dashboard - {{ request.user.username }}</h1>
-
-<hr>
-
-<h2>Quick Stats</h2>
-
-<ul>
-    <li>Total Employees: {{ total_employees }}</li>
-    <li>Total Food Items: {{ total_food_items }}</li>
-    <li>Total Stock: {{ total_stock }}</li>
-    <li>Total Orders: {{ total_orders }}</li>
-</ul>
-
-<hr>
-
-<h2>Recent Orders</h2>
-
-<table border="1">
-    <tr>
-        <th>Order ID</th>
-        <th>Customer</th>
-        <th>Status</th>
-    </tr>
-
-    {% for order in recent_orders %}
-    <tr>
-        <td>{{ order.id }}</td>
-        <td>{{ order.customer.user.username }}</td>
-        <td>{{ order.status }}</td>
-    </tr>
-    {% endfor %}
-</table>
-
-</body>
-</html>
+{% extends "base.html" %}
+{% block title %}Manager Dashboard · Liberty Food{% endblock %}
+{% block content %}
+<section class="mb-7"><p class="text-xs font-semibold uppercase tracking-[.18em] text-indigo-600 dark:text-indigo-400">Manager workspace</p><h1 class="mt-2 text-2xl font-extrabold text-slate-950 dark:text-white">Welcome, {{ request.user.username }}</h1></section><div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4"><div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-soft dark:border-slate-800 dark:bg-slate-900"><p class="text-xs uppercase text-slate-500">Employees</p><p class="mt-3 text-3xl font-extrabold">{{ total_employees }}</p></div><div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-soft dark:border-slate-800 dark:bg-slate-900"><p class="text-xs uppercase text-slate-500">Food items</p><p class="mt-3 text-3xl font-extrabold">{{ total_food_items }}</p></div><div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-soft dark:border-slate-800 dark:bg-slate-900"><p class="text-xs uppercase text-slate-500">Stock</p><p class="mt-3 text-3xl font-extrabold">{{ total_stock }}</p></div><div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-soft dark:border-slate-800 dark:bg-slate-900"><p class="text-xs uppercase text-slate-500">Orders</p><p class="mt-3 text-3xl font-extrabold">{{ total_orders }}</p></div></div><section class="mt-6 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-soft dark:border-slate-800 dark:bg-slate-900"><div class="border-b border-slate-200 px-6 py-4 dark:border-slate-800"><h2 class="font-bold">Recent orders</h2></div><div class="overflow-x-auto"><table class="min-w-full divide-y divide-slate-200 dark:divide-slate-800"><thead class="bg-slate-50 dark:bg-slate-800/50"><tr><th class="px-6 py-3 text-left text-xs uppercase text-slate-500">Order</th><th class="px-6 py-3 text-left text-xs uppercase text-slate-500">Customer</th><th class="px-6 py-3 text-left text-xs uppercase text-slate-500">Status</th></tr></thead><tbody>{% for order in recent_orders %}<tr><td class="px-6 py-4 font-mono text-sm">#{{ order.id }}</td><td class="px-6 py-4 text-sm">{{ order.customer.user.username }}</td><td class="px-6 py-4 text-sm">{{ order.status }}</td></tr>{% endfor %}</tbody></table></div></section>
+{% endblock %}

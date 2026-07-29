@@ -1,78 +1,16 @@
 {% extends "base.html" %}
+{% block title %}Add Dealer · Liberty Food{% endblock %}
 {% block content %}
-<!-- Premium Header -->
-<div class="card border-0 shadow-lg rounded-4 overflow-hidden mb-4">
-
-    <div class="p-4 text-white"
-        style="background: linear-gradient(135deg, #1e3c72, #2a5298); ">
-
-        <div class="d-flex justify-content-between align-items-center flex-wrap">
-
-            <div>
-                <h2 class="fw-bold mb-1">
-                     Add Dealer
-                </h2>
-
-                <p class="mb-0 opacity-75">
-                    Add More New Dealers For Better Deals
-                </p>
-            </div>
-
-
-        </div>
-
-    </div>
+<div class="mx-auto max-w-3xl">
+  <a href="{% url 'dealer_list' %}" class="mb-4 inline-flex items-center gap-2 text-sm font-semibold text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400"><svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"/></svg> Dealers</a>
+  <section class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-soft dark:border-slate-800 dark:bg-slate-900">
+    <div class="border-b border-slate-200 px-6 py-5 dark:border-slate-800"><p class="text-xs font-semibold uppercase tracking-[.18em] text-indigo-600 dark:text-indigo-400">Supply partner</p><h1 class="mt-2 text-xl font-extrabold text-slate-950 dark:text-white">Add dealer</h1><p class="mt-1 text-sm text-slate-500">Register a supplier and their contact information.</p></div>
+    <form method="POST" class="space-y-5 p-6 sm:p-8">{% csrf_token %}
+      <div><label for="dealer-name" class="mb-2 block text-sm font-semibold text-slate-700 dark:text-slate-200">Dealer name</label><input id="dealer-name" type="text" name="name" placeholder="Company or representative name" required class="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 dark:border-slate-700 dark:bg-slate-950"></div>
+      <div><label for="dealer-phone" class="mb-2 block text-sm font-semibold text-slate-700 dark:text-slate-200">Phone</label><input id="dealer-phone" type="text" name="phone" placeholder="+92 300 0000000" required class="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 dark:border-slate-700 dark:bg-slate-950"></div>
+      <div><label for="dealer-address" class="mb-2 block text-sm font-semibold text-slate-700 dark:text-slate-200">Address</label><textarea id="dealer-address" name="address" rows="4" placeholder="Full supply or office address" class="w-full resize-y rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 dark:border-slate-700 dark:bg-slate-950"></textarea></div>
+      <div class="flex flex-col-reverse gap-3 border-t border-slate-100 pt-6 dark:border-slate-800 sm:flex-row sm:justify-end"><a href="{% url 'dealer_list' %}" class="inline-flex justify-center rounded-xl border border-slate-300 px-5 py-2.5 text-sm font-semibold text-slate-700 dark:border-slate-700 dark:text-slate-200">Cancel</a><button type="submit" class="rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-indigo-600/20 hover:bg-indigo-700">Save dealer</button></div>
+    </form>
+  </section>
 </div>
-
-<div class="container-fluid d-flex justify-content-center align-items-center" >
-
-    <div class="card shadow-lg border-0" style="width:700px;">
-
-        <div class="card-body p-4">
-
-            <form method="POST">
-                {% csrf_token %}
-
-                <!-- Dealer Name -->
-                <div class="mb-3">
-                    <label class="form-label"><b>Dealer Name</b></label>
-                    <input type="text" name="name" class="form-control"
-                        placeholder="Enter dealer name" required>
-                </div>
-
-                <!-- Phone -->
-                <div class="mb-3">
-                    <label class="form-label"><b>Phone</b></label>
-                    <input type="text" name="phone" class="form-control"
-                        placeholder="Enter dealer phone" required>
-                </div>
-
-                <!-- Address -->
-                <div class="mb-3">
-                    <label class="form-label"><b>Address</b></label>
-                    <textarea name="address" class="form-control"
-                        placeholder="Enter dealer address" rows="3"></textarea>
-                </div>
-
-                <!-- Buttons -->
-                <div class="d-flex justify-content-between mt-4">
-
-                    <a href="{% url 'dealer_list' %}" class="btn btn-secondary">
-                        ⬅ Back
-                    </a>
-
-                    <button type="submit" class="btn btn-success">
-                        💾 Save Dealer
-                    </button>
-
-                </div>
-
-            </form>
-
-        </div>
-
-    </div>
-
-</div>
-
 {% endblock %}
