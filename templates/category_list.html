@@ -2,14 +2,45 @@
 {% block title %}Categories · Liberty Food{% endblock %}
 {% block content %}
 <section class="mb-7 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-  <div><p class="text-xs font-semibold uppercase tracking-[.18em] text-indigo-600 dark:text-indigo-400">Catalog structure</p><h1 class="mt-2 text-2xl font-extrabold tracking-tight text-slate-950 dark:text-white">Categories</h1><p class="mt-2 text-sm text-slate-500">Organize food items into clear operational groups.</p></div>
+  <div>
+    <p class="text-xs font-semibold uppercase tracking-[.18em] text-indigo-600 dark:text-indigo-400">Catalog structure</p>
+    <h1 class="mt-2 text-2xl font-extrabold tracking-tight text-slate-950 dark:text-white">Categories</h1>
+    <p class="mt-2 text-sm text-slate-500">Organize food items into clear operational groups.</p>
+  </div>
   <a href="{% url 'add_category' %}" class="inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-indigo-600/20 hover:bg-indigo-700"><svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg> Add category</a>
 </section>
+
 <section class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-soft dark:border-slate-800 dark:bg-slate-900">
-  <div class="border-b border-slate-200 px-6 py-4 dark:border-slate-800"><h2 class="font-bold text-slate-900 dark:text-white">Category directory</h2><p class="mt-1 text-xs text-slate-500">All catalog groupings</p></div>
-  <div class="overflow-x-auto"><table class="min-w-full divide-y divide-slate-200 dark:divide-slate-800">
-    <thead class="bg-slate-50 dark:bg-slate-800/50"><tr><th class="w-24 px-6 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">No.</th><th class="px-6 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Category</th><th class="px-6 py-3.5 text-right text-xs font-semibold uppercase tracking-wider text-slate-500">Actions</th></tr></thead>
-    <tbody class="divide-y divide-slate-100 dark:divide-slate-800">{% for category in categories %}<tr class="hover:bg-slate-50 dark:hover:bg-slate-800/40"><td class="px-6 py-4 font-mono text-sm text-slate-400">{{ forloop.counter|stringformat:"02d" }}</td><td class="px-6 py-4"><span class="inline-flex rounded-lg border border-indigo-200 bg-indigo-50 px-2.5 py-1 text-sm font-semibold text-indigo-700 dark:border-indigo-900 dark:bg-indigo-950/50 dark:text-indigo-300">{{ category.name }}</span></td><td class="px-6 py-4"><div class="flex justify-end gap-2"><a href="{% url 'category_edit' category.id %}" class="rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-600 hover:border-indigo-300 hover:text-indigo-600 dark:border-slate-700 dark:text-slate-300">Edit</a><a href="{% url 'category_delete' category.id %}" onclick="return confirm('Are you sure to delete this?')" class="rounded-lg border border-red-200 px-3 py-2 text-xs font-semibold text-red-600 hover:bg-red-50 dark:border-red-900 dark:text-red-400 dark:hover:bg-red-950/40">Delete</a></div></td></tr>{% empty %}<tr><td colspan="3" class="px-6 py-16 text-center text-sm text-slate-500">No categories available.</td></tr>{% endfor %}</tbody>
-  </table></div>
+  <div class="border-b border-slate-200 px-6 py-4 dark:border-slate-800">
+    <h2 class="font-bold text-slate-900 dark:text-white">Category directory</h2>
+    <p class="mt-1 text-xs text-slate-500">All catalog groupings</p>
+  </div>
+  <div class="overflow-x-auto">
+    <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-800">
+      <thead class="bg-slate-50 dark:bg-slate-800/50">
+        <tr>
+          <th class="w-24 px-6 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">No.</th>
+          <th class="px-6 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Category</th>
+          <th class="px-6 py-3.5 text-right text-xs font-semibold uppercase tracking-wider text-slate-500">Actions</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
+        {% for category in categories %}
+          <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/40">
+            <td class="px-6 py-4 font-mono text-sm text-slate-400">{{ forloop.counter|stringformat:"02d" }}</td>
+            <td class="px-6 py-4"><span class="inline-flex rounded-lg border border-indigo-200 bg-indigo-50 px-2.5 py-1 text-sm font-semibold text-indigo-700 dark:border-indigo-900 dark:bg-indigo-950/50 dark:text-indigo-300">{{ category.name }}</span></td>
+            <td class="px-6 py-4">
+              <div class="flex justify-end gap-2">
+                <a href="{% url 'category_edit' category.id %}" class="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-600 hover:border-indigo-300 hover:text-indigo-600 dark:border-slate-700 dark:text-slate-300">Edit</a>
+                <a href="{% url 'category_delete' category.id %}" onclick="return confirm('Are you sure to delete this?')" class="inline-flex items-center gap-2 rounded-lg border border-red-200 px-3 py-2 text-xs font-semibold text-red-600 hover:bg-red-50 dark:border-red-900 dark:text-red-400 dark:hover:bg-red-950/40">Delete</a>
+              </div>
+            </td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="3" class="px-6 py-16 text-center text-sm text-slate-500">No categories available.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
 </section>
 {% endblock %}

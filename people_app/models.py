@@ -17,6 +17,20 @@ class Customer(models.Model):
         return self.name
 
 
+class AuditLog(models.Model):
+    """Immutable audit record for destructive administration actions."""
+    action = models.CharField(max_length=40)
+    object_type = models.CharField(max_length=80)
+    object_id = models.PositiveBigIntegerField()
+    reason = models.TextField()
+    actor = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True,
+                              on_delete=models.SET_NULL, related_name="audit_events")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ("-created_at",)
+
+
 # 🔹 Employee Model
 class Employee(models.Model):
     # Required to establish a stable ownership boundary for employee data.

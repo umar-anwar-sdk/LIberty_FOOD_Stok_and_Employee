@@ -1,11 +1,14 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib import messages
 from django.db.models import Sum, Count
+from django.db import transaction
 from django.utils.dateparse import parse_date
 from decimal import Decimal
 import json
 import calendar
 from .models import Category, Dealer, FoodItem, Order, OrderItem
+from .ledger import sync_order_ledger, record_payment
+from people_app.models import AuditLog
 from people_app.models import Customer, Employee
 from django.db.models.functions import ExtractMonth
 from django.contrib.auth.decorators import login_required
@@ -16,6 +19,19 @@ from accounts.decoraters import (
     admin_required,
     is_admin,
 )
+
+
+def delete_with_reason(request, obj, object_type, success_url):
+    """Shared server-side enforcement used by every destructive endpoint."""
+    reason = (request.POST.get("delete_reason") or "").strip()
+    if not reason:
+        messages.error(request, "A delete reason is required.")
+        return redirect(success_url)
+    AuditLog.objects.create(action="delete", object_type=object_type, object_id=obj.pk,
+                            reason=reason, actor=request.user)
+    obj.delete()
+    messages.success(request, f"{object_type} deleted and reason recorded.")
+    return redirect(success_url)
 
 # ---------------- HOME ---------------- #
 
@@ -188,9 +204,10 @@ def category_edit(request, pk):
 
 @admin_required
 def category_delete(request, pk):
-
-    get_object_or_404(Category, pk=pk).delete()
-    return redirect('category_list')
+    category = get_object_or_404(Category, pk=pk)
+    if request.method == "POST":
+        return delete_with_reason(request, category, "Category", "category_list")
+    return render(request, "delete_reason.html", {"object": category, "cancel_url": "category_list"})
 
 
 # ---------------- DEALER ---------------- #
@@ -223,8 +240,7 @@ def delete_dealer(request, id):
     dealer = get_object_or_404(Dealer, id=id)
 
     if request.method == "POST":
-        dealer.delete()
-        return redirect("dealer_list")
+        return delete_with_reason(request, dealer, "Dealer", "dealer_list")
 
     return render(request, "confirm_delete.html", {"dealer": dealer})
 # ---------------- FOOD ---------------- #
@@ -262,13 +278,18 @@ def fooditem_add(request):
     # image optional
     image = request.FILES.get("image") or None
 
-    FoodItem.objects.create(
+    fi = FoodItem.objects.create(
         name=request.POST.get("name"),
         description=request.POST.get("description"),
         price=request.POST.get("price"),
         category=category,
         dealer=dealer,
-        image=image
+        image=image,
+        default_unit=request.POST.get("default_unit") or "unit",
+        pieces_per_pack=int(request.POST.get("pieces_per_pack") or 1),
+        pieces_per_box=int(request.POST.get("pieces_per_box") or 0),
+        pieces_per_carton=int(request.POST.get("pieces_per_carton") or 0),
+        custom_unit_name=request.POST.get("custom_unit_name") or None,
     )
 
     return redirect("fooditem_list")
@@ -285,6 +306,11 @@ def fooditem_edit(request, pk):
         item.price = request.POST.get("price")
         item.category_id = request.POST.get("category")
         item.dealer_id = request.POST.get("dealer")
+        item.default_unit = request.POST.get("default_unit") or item.default_unit
+        item.pieces_per_pack = int(request.POST.get("pieces_per_pack") or item.pieces_per_pack)
+        item.pieces_per_box = int(request.POST.get("pieces_per_box") or item.pieces_per_box)
+        item.pieces_per_carton = int(request.POST.get("pieces_per_carton") or item.pieces_per_carton)
+        item.custom_unit_name = request.POST.get("custom_unit_name") or item.custom_unit_name
         item.save()
         return redirect("fooditem_list")
 
@@ -299,18 +325,67 @@ def fooditem_edit(request, pk):
 def fooditem_delete(request, pk):
 
     item = get_object_or_404(FoodItem, pk=pk)
-    item.delete()
-    return redirect("fooditem_list")
+    if request.method == "POST":
+        return delete_with_reason(request, item, "Food item", "fooditem_list")
+    return render(request, "fooditem_confirm_delete.html", {"item": item})
 
 
 @admin_required
 def add_food_quantity(request):
 
     if request.method == "POST":
-        for fid, qty in zip(request.POST.getlist("food_item"), request.POST.getlist("quantity")):
+        food_ids = request.POST.getlist("food_item[]") or request.POST.getlist("food_item")
+        quantities = request.POST.getlist("quantity[]") or request.POST.getlist("quantity")
+        unit_types = request.POST.getlist("unit_type[]") or request.POST.getlist("unit_type")
+        pieces_per_units = request.POST.getlist("pieces_per_unit[]") or request.POST.getlist("pieces_per_unit")
+
+
+        for i, fid in enumerate(food_ids):
+            try:
+                qty = int(quantities[i]) if i < len(quantities) and quantities[i] else 0
+            except (ValueError, TypeError):
+                qty = 0
+
+            if qty <= 0:
+                continue
+
             food = get_object_or_404(FoodItem, id=fid)
-            food.quantity += int(qty)
+
+            unit_type = (unit_types[i] if i < len(unit_types) else "unit") or "unit"
+
+            # pieces per unit: prefer explicit field, otherwise fall back to item's config
+            ppu = None
+            if i < len(pieces_per_units) and pieces_per_units[i]:
+                try:
+                    ppu = int(pieces_per_units[i])
+                except (ValueError, TypeError):
+                    ppu = None
+            if not ppu:
+                # use item-specific configuration
+                try:
+                    ppu = int(food.pieces_per(unit_type))
+                except Exception:
+                    ppu = 1
+
+            total_pieces = qty * ppu
+
+            # Update aggregate stock (stored in pieces)
+            food.quantity += int(total_pieces)
             food.save()
+
+            # Record a stock transaction for audit
+            try:
+                from .models import StockTransaction
+                StockTransaction.objects.create(
+                    food_item=food,
+                    quantity=qty,
+                    unit_type=unit_type,
+                    pieces_per_unit=ppu,
+                    total_pieces=total_pieces,
+                )
+            except Exception:
+                # Do not fail the whole request for an audit write error
+                pass
 
         return redirect("fooditem_list")
 
@@ -361,55 +436,42 @@ def create_order(request):
             id=request.POST.get("customer")
         )
 
-        paid_amount = Decimal(request.POST.get("paid_amount") or 0)
-        # 1️⃣ Create Order with payment info
-        order = Order.objects.create(
-    customer=customer,
-    paid_amount=paid_amount,
-    payment_status="Pending"
-)
-
+        try:
+            paid_amount = Decimal(request.POST.get("paid_amount") or 0)
+        except ArithmeticError:
+            messages.error(request, "Enter a valid payment amount.")
+            return redirect("order_add")
+        if paid_amount < 0:
+            messages.error(request, "Payment cannot be negative.")
+            return redirect("order_add")
         food_ids = request.POST.getlist("food_item[]")
         quantities = request.POST.getlist("quantity[]")
-
-        total_created = False
-
-        for fid, qty in zip(food_ids, quantities):
-
-            if not fid or not qty:
-                continue
-
-            food = get_object_or_404(FoodItem, id=fid)
-
-            if food.quantity < int(qty):
-                messages.error(request, "Stock issue")
-                order.delete()
-                return redirect("order_list")
-
-            OrderItem.objects.create(
-                order=order,
-                food_item=food,
-                quantity=int(qty)
-            )
-
-            food.quantity -= int(qty)
-            food.save()
-
-            total_created = True
-
-        # agar koi item hi na ho
-        if not total_created:
-            order.delete()
-            messages.error(request, "No items selected")
-            return redirect("order_list")
-        total_bill = order.total_price
-
-        if order.paid_amount >= total_bill:
-            order.payment_status = "Cleared"
-        else:
-            order.payment_status = "Pending"
-
-        order.save()
+        # Keep stock, invoice and ledger writes in one database transaction.
+        try:
+            with transaction.atomic():
+                order = Order.objects.create(customer=customer, paid_amount=0, payment_status="Pending")
+                total_created = False
+                for fid, qty in zip(food_ids, quantities):
+                    if not fid or not qty:
+                        continue
+                    food = get_object_or_404(FoodItem.objects.select_for_update(), id=fid)
+                    if not str(qty).isdigit() or int(qty) <= 0 or food.quantity < int(qty):
+                        raise ValueError("Stock issue or invalid quantity")
+                    OrderItem.objects.create(order=order, food_item=food, quantity=int(qty), unit_price=food.price)
+                    food.quantity -= int(qty)
+                    food.save(update_fields=["quantity"])
+                    total_created = True
+                if not total_created:
+                    raise ValueError("No items selected")
+                total_bill = order.total_price
+                if paid_amount > total_bill:
+                    raise ValueError("Initial payment cannot exceed the order total.")
+                sync_order_ledger(order)
+                if paid_amount:
+                    record_payment(order, paid_amount, "Initial order payment")
+        except ValueError as exc:
+            messages.error(request, str(exc))
+            return redirect("order_add")
         messages.success(request, "Order created successfully")
         return redirect("order_list")
 
@@ -453,6 +515,7 @@ def order_edit(request, pk):
                     quantity=quantity
                 )
 
+        sync_order_ledger(order)
         return redirect("order_detail", pk=order.pk)
 
     return render(request, "order_edit.html", {"order": order})
@@ -475,8 +538,7 @@ def order_delete(request, pk):
     order = get_object_or_404(Order, pk=pk)
 
     if request.method == "POST":
-        order.delete()
-        return redirect("order_list")
+        return delete_with_reason(request, order, "Order", "order_list")
 
     return render(request, "order_confirm_delete.html", {"order": order})
 

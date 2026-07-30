@@ -7,6 +7,54 @@
 {% endblock %}
 {% block title %}Orders · Liberty Food{% endblock %}
 {% block content %}
-<section class="mb-7 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between"><div><p class="text-xs font-semibold uppercase tracking-[.18em] text-indigo-600 dark:text-indigo-400">Fulfillment</p><h1 class="mt-2 text-2xl font-extrabold text-slate-950 dark:text-white">Orders</h1><p class="mt-2 text-sm text-slate-500">Monitor customer orders, line items and fulfillment status.</p></div><a href="{% url 'order_add' %}" class="inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-indigo-600/20 hover:bg-indigo-700"><svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg> Create order</a></section>
-<section class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-soft dark:border-slate-800 dark:bg-slate-900"><div class="overflow-x-auto"><table class="min-w-full divide-y divide-slate-200 dark:divide-slate-800"><thead class="bg-slate-50 dark:bg-slate-800/50"><tr><th class="px-6 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Order</th><th class="px-6 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Customer</th><th class="px-6 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Date</th><th class="px-6 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Status</th><th class="px-6 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Items</th><th class="px-6 py-3.5 text-right text-xs font-semibold uppercase tracking-wider text-slate-500">Actions</th></tr></thead><tbody class="divide-y divide-slate-100 dark:divide-slate-800">{% for order in orders %}<tr class="align-top hover:bg-slate-50 dark:hover:bg-slate-800/40"><td class="px-6 py-4 font-mono text-sm font-bold text-indigo-600 dark:text-indigo-400">#{{ order.id }}</td><td class="whitespace-nowrap px-6 py-4"><a href="{% url 'customer_record' order.customer.id %}" class="text-sm font-semibold text-slate-900 hover:text-indigo-600 dark:text-white">{{ order.customer.name }}</a></td><td class="whitespace-nowrap px-6 py-4 text-sm text-slate-500">{{ order.order_date|date:"d M Y H:i" }}</td><td class="px-6 py-4"><form method="post" action="{% url 'update_order_status' order.id %}">{% csrf_token %}<select name="status" onchange="this.form.submit()" class="rounded-lg border px-2.5 py-1.5 text-xs font-semibold outline-none {% if order.status == 'Completed' %}border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950/50 dark:text-emerald-300{% elif order.status == 'Cancelled' %}border-red-200 bg-red-50 text-red-700 dark:border-red-900 dark:bg-red-950/50 dark:text-red-300{% else %}border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-900 dark:bg-amber-950/50 dark:text-amber-300{% endif %}"><option value="Pending" {% if order.status == "Pending" %}selected{% endif %}>Pending</option><option value="Completed" {% if order.status == "Completed" %}selected{% endif %}>Completed</option><option value="Cancelled" {% if order.status == "Cancelled" %}selected{% endif %}>Cancelled</option></select></form></td><td class="min-w-56 px-6 py-4"><div class="flex flex-wrap gap-1.5">{% for item in order.items.all %}<span class="rounded-md bg-slate-100 px-2 py-1 text-xs text-slate-600 dark:bg-slate-800 dark:text-slate-300">{{ item.food_item.name }} × {{ item.quantity }}</span>{% empty %}<span class="text-xs text-slate-400">No items</span>{% endfor %}</div></td><td class="px-6 py-4"><div class="flex justify-end gap-2"><a href="{% url 'order_detail' order.id %}" class="rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold dark:border-slate-700">View</a><a href="{% url 'order_edit' order.id %}" class="rounded-lg border border-amber-200 px-3 py-2 text-xs font-semibold text-amber-700 dark:border-amber-900 dark:text-amber-400">Edit</a><form action="{% url 'order_delete' order.id %}" method="post">{% csrf_token %}<button type="submit" onclick="return confirm('Are you sure you want to delete this order?');" class="rounded-lg border border-red-200 px-3 py-2 text-xs font-semibold text-red-600 dark:border-red-900 dark:text-red-400">Delete</button></form></div></td></tr>{% empty %}<tr><td colspan="6" class="px-6 py-16 text-center text-sm text-slate-500">No orders found.</td></tr>{% endfor %}</tbody></table></div></section>
+<section class="mb-7 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+  <div>
+    <p class="text-xs font-semibold uppercase tracking-[.18em] text-indigo-600 dark:text-indigo-400">Fulfillment</p>
+    <h1 class="mt-2 text-2xl font-extrabold text-slate-950 dark:text-white">Orders</h1>
+    <p class="mt-2 text-sm text-slate-500">Monitor customer orders, line items and fulfillment status.</p>
+  </div>
+  <a href="{% url 'order_add' %}" class="inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-indigo-600/20 hover:bg-indigo-700"><svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg> Create order</a>
+</section>
+
+<section class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-soft dark:border-slate-800 dark:bg-slate-900">
+  <div class="overflow-x-auto">
+    <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-800">
+      <thead class="bg-slate-50 dark:bg-slate-800/50">
+        <tr>
+          <th class="px-6 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Order</th>
+          <th class="px-6 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Customer</th>
+          <th class="px-6 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Date</th>
+          <th class="px-6 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Status</th>
+          <th class="px-6 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Items</th>
+          <th class="px-6 py-3.5 text-right text-xs font-semibold uppercase tracking-wider text-slate-500">Actions</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
+        {% for order in orders %}
+          <tr class="align-top hover:bg-slate-50 dark:hover:bg-slate-800/40">
+            <td class="px-6 py-4 font-mono text-sm font-bold text-indigo-600 dark:text-indigo-400">#{{ order.id }}</td>
+            <td class="whitespace-nowrap px-6 py-4"><a href="{% url 'customer_record' order.customer.id %}" class="text-sm font-semibold text-slate-900 hover:text-indigo-600 dark:text-white">{{ order.customer.name }}</a></td>
+            <td class="whitespace-nowrap px-6 py-4 text-sm text-slate-500">{{ order.order_date|date:"d M Y H:i" }}</td>
+            <td class="px-6 py-4">
+              <form method="post" action="{% url 'update_order_status' order.id %}">{% csrf_token %}
+                <select name="status" onchange="this.form.submit()" class="rounded-lg border px-2.5 py-1.5 text-xs font-semibold outline-none {% if order.status == 'Completed' %}border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950/50 dark:text-emerald-300{% elif order.status == 'Cancelled' %}border-red-200 bg-red-50 text-red-700 dark:border-red-900 dark:bg-red-950/50 dark:text-red-300{% else %}border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900{% endif %}">
+                  <option value="Pending" {% if order.status == 'Pending' %}selected{% endif %}>Pending</option>
+                  <option value="Completed" {% if order.status == 'Completed' %}selected{% endif %}>Completed</option>
+                  <option value="Cancelled" {% if order.status == 'Cancelled' %}selected{% endif %}>Cancelled</option>
+                </select>
+              </form>
+            </td>
+            <td class="px-6 py-4">{% for item in order.items.all %}<span class="inline-flex items-center gap-2 rounded-lg border border-slate-100 px-3 py-2 text-xs font-semibold text-slate-500">{{ item.food_item.name }} × {{ item.quantity }}</span>{% empty %}<span class="text-xs text-slate-400">No items</span>{% endfor %}</td>
+            <td class="px-6 py-4">
+              <div class="flex justify-end gap-2">
+                <a href="{% url 'order_detail' order.id %}" class="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold dark:border-slate-700">View</a>
+                <a href="{% url 'order_edit' order.id %}" class="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold dark:border-slate-700">Edit</a>
+              </div>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
 {% endblock %}

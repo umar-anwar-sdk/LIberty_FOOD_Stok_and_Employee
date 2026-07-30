@@ -5,23 +5,121 @@
 <form method="post" class="space-y-6">{% csrf_token %}
   <div id="stockContainer" class="space-y-4">
     <section class="stock-group relative rounded-2xl border border-slate-200 bg-white p-6 shadow-soft dark:border-slate-800 dark:bg-slate-900">
-      <div class="mb-5 flex items-center justify-between"><div><p class="text-xs font-semibold uppercase tracking-wider text-indigo-600 dark:text-indigo-400">Stock line</p><h2 class="mt-1 font-bold text-slate-900 dark:text-white">Inventory item</h2></div><button type="button" onclick="removeStock(this)" title="Remove" class="rounded-xl border border-red-200 p-2 text-red-600 hover:bg-red-50 dark:border-red-900 dark:text-red-400"><svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4h8v2M6 6l1 15h10l1-15"/></svg></button></div>
+      <div class="mb-5 flex items-center justify-between">
+        <div>
+          <p class="text-xs font-semibold uppercase tracking-wider text-indigo-600 dark:text-indigo-400">Stock line</p>
+          <h2 class="mt-1 font-bold text-slate-900 dark:text-white">Inventory item</h2>
+        </div>
+        <button type="button" onclick="removeStock(this)" title="Remove" class="rounded-xl border border-red-200 p-2 text-red-600 hover:bg-red-50 dark:border-red-900 dark:text-red-400"><svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4h8v2M6 6l1 15h10l1-15"/></svg></button>
+      </div>
+
       <div class="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
-        <div class="xl:col-span-2"><label class="mb-2 block text-sm font-semibold">Food item</label><select name="food_item" onchange="updatePrice(this)" class="food-item w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 dark:border-slate-700 dark:bg-slate-950">{% for item in items %}<option value="{{ item.id }}" data-price="{{ item.price }}">{{ item.name }} · Stock {{ item.quantity }}</option>{% endfor %}</select></div>
-        <div><label class="mb-2 block text-sm font-semibold">Unit type</label><select name="unit_type" onchange="calculateTotal(this.closest('.stock-group'))" class="unit-type w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 dark:border-slate-700 dark:bg-slate-950"><option value="unit">Unit (1 pc)</option><option value="pack">Pack (4 pcs)</option><option value="crate">Crate (6 pcs)</option><option value="carton">Carton (24 pcs)</option></select></div>
-        <div><label class="mb-2 block text-sm font-semibold">Quantity</label><input type="number" name="quantity" min="1" placeholder="0" oninput="calculateTotal(this.closest('.stock-group'))" class="quantity w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 dark:border-slate-700 dark:bg-slate-950"></div>
-        <div class="md:col-start-1"><label class="mb-2 block text-xs font-semibold uppercase tracking-wider text-slate-500">Unit price</label><input type="text" readonly class="unit-price w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold dark:border-slate-800 dark:bg-slate-950"></div><div><label class="mb-2 block text-xs font-semibold uppercase tracking-wider text-slate-500">Estimated total</label><input type="text" readonly class="total-price w-full rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-bold text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-400"></div>
+        <div class="xl:col-span-2">
+          <label class="mb-2 block text-sm font-semibold">Food item</label>
+          <select name="food_item[]" onchange="updatePrice(this)" class="food-item w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 dark:border-slate-700 dark:bg-slate-950">
+            {% for item in items %}
+              <option value="{{ item.id }}" data-price="{{ item.price }}" data-default-unit="{{ item.default_unit }}" data-pieces-per-pack="{{ item.pieces_per_pack }}" data-pieces-per-box="{{ item.pieces_per_box }}" data-pieces-per-carton="{{ item.pieces_per_carton }}">{{ item.name }} · Stock {{ item.quantity }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div>
+          <label class="mb-2 block text-sm font-semibold">Unit type</label>
+          <select name="unit_type[]" onchange="onUnitTypeChange(this)" class="unit-type w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 dark:border-slate-700 dark:bg-slate-950">
+            <option value="unit">Piece</option>
+            <option value="pack">Pack</option>
+            <option value="box">Box</option>
+            <option value="carton">Carton</option>
+            <option value="bottle">Bottle</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="mb-2 block text-sm font-semibold">Quantity</label>
+          <input type="number" name="quantity[]" min="1" placeholder="0" oninput="calculateTotal(this.closest('.stock-group'))" class="quantity w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 dark:border-slate-700 dark:bg-slate-950">
+        </div>
+
+        <div>
+          <label class="mb-2 block text-sm font-semibold">Pieces per unit</label>
+          <input type="number" name="pieces_per_unit[]" min="1" value="1" oninput="(function(i){i.dataset.userEdited=true;})(this)" class="pieces-per-unit w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 dark:border-slate-700 dark:bg-slate-950">
+        </div>
+
+        <div class="md:col-start-1">
+          <label class="mb-2 block text-xs font-semibold uppercase tracking-wider text-slate-500">Unit price</label>
+          <input type="text" readonly class="unit-price w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold dark:border-slate-800 dark:bg-slate-950">
+        </div>
+
+        <div>
+          <label class="mb-2 block text-xs font-semibold uppercase tracking-wider text-slate-500">Estimated total</label>
+          <input type="text" readonly class="total-price w-full rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-bold text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-400">
+        </div>
       </div>
     </section>
   </div>
+
   <button type="button" onclick="addStock()" class="inline-flex items-center gap-2 rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-2.5 text-sm font-semibold text-indigo-700 hover:bg-indigo-100 dark:border-indigo-900 dark:bg-indigo-950/40 dark:text-indigo-300"><svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg> Add another item</button>
-  <div class="flex flex-col-reverse gap-3 border-t border-slate-200 pt-6 dark:border-slate-800 sm:flex-row sm:justify-end"><a href="{% url 'fooditem_list' %}" class="inline-flex justify-center rounded-xl border border-slate-300 px-5 py-2.5 text-sm font-semibold dark:border-slate-700">Cancel</a><button type="submit" class="rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-indigo-600/20 hover:bg-indigo-700">Save stock intake</button></div>
+
+  <div class="flex flex-col-reverse gap-3 border-t border-slate-200 pt-6 dark:border-slate-800 sm:flex-row sm:justify-end">
+    <a href="{% url 'fooditem_list' %}" class="inline-flex justify-center rounded-xl border border-slate-300 px-5 py-2.5 text-sm font-semibold dark:border-slate-700">Cancel</a>
+    <button type="submit" class="rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-indigo-600/20 hover:bg-indigo-700">Save stock intake</button>
+  </div>
 </form>
 {% endblock %}
-{% block scripts %}<script>
-function updatePrice(select){const group=select.closest('.stock-group');group.querySelector('.unit-price').value=select.options[select.selectedIndex].dataset.price||0;calculateTotal(group);}
-function calculateTotal(group){const qty=parseFloat(group.querySelector('.quantity').value)||0;const price=parseFloat(group.querySelector('.unit-price').value)||0;const unit=group.querySelector('.unit-type').value;const multiplier={unit:1,pack:4,crate:6,carton:24}[unit]||1;group.querySelector('.total-price').value=(qty*multiplier*price).toFixed(2);}
-function addStock(){const container=document.getElementById('stockContainer');const clone=container.querySelector('.stock-group').cloneNode(true);clone.querySelector('.quantity').value='';clone.querySelector('.unit-price').value='';clone.querySelector('.total-price').value='';container.appendChild(clone);updatePrice(clone.querySelector('.food-item'));}
-function removeStock(button){const container=document.getElementById('stockContainer');if(container.children.length>1)button.closest('.stock-group').remove();else alert('At least one item is required.');}
-document.addEventListener('DOMContentLoaded',()=>updatePrice(document.querySelector('.food-item')));
-</script>{% endblock %}
+
+{% block scripts %}
+<script>
+function updatePrice(select){
+  const group=select.closest('.stock-group');
+  const opt = select.options[select.selectedIndex];
+  const price = parseFloat(opt.dataset.price)||0;
+  group.querySelector('.unit-price').value = price;
+  // set pieces-per-unit default from item configuration
+  const defaultUnit = opt.dataset.defaultUnit || 'unit';
+  const ppuInput = group.querySelector('.pieces-per-unit');
+  let def = 1;
+  if(defaultUnit === 'pack') def = parseInt(opt.dataset.piecesPerPack) || 1;
+  if(defaultUnit === 'box') def = parseInt(opt.dataset.piecesPerBox) || (parseInt(opt.dataset.piecesPerPack)||1);
+  if(defaultUnit === 'carton') def = parseInt(opt.dataset.piecesPerCarton) || (parseInt(opt.dataset.piecesPerPack)||1);
+  if(defaultUnit === 'bottle') def = parseInt(opt.dataset.piecesPerPack) || 1;
+  if(!ppuInput.dataset.userEdited) ppuInput.value = def;
+  // set unit select to defaultUnit if not user-chosen
+  const unitSelect = group.querySelector('.unit-type');
+  if(!unitSelect.dataset.userSelected){ unitSelect.value = defaultUnit; }
+  calculateTotal(group);
+}
+function calculateTotal(group){
+  const qty=parseFloat(group.querySelector('.quantity').value)||0;
+  const price=parseFloat(group.querySelector('.unit-price').value)||0;
+  const piecesPerUnit = parseInt(group.querySelector('.pieces-per-unit').value)||1;
+  const totalPieces = qty * piecesPerUnit;
+  group.querySelector('.total-price').value = (qty * piecesPerUnit * price).toFixed(2);
+}
+function addStock(){
+  const container=document.getElementById('stockContainer');
+  const clone=container.querySelector('.stock-group').cloneNode(true);
+  clone.querySelector('.quantity').value='';
+  clone.querySelector('.unit-price').value='';
+  clone.querySelector('.total-price').value='';
+  // reset user flags
+  const ppu = clone.querySelector('.pieces-per-unit'); if(ppu) delete ppu.dataset.userEdited;
+  const unit = clone.querySelector('.unit-type'); if(unit) delete unit.dataset.userSelected;
+  container.appendChild(clone);
+  updatePrice(clone.querySelector('.food-item'));
+}
+function removeStock(button){
+  const container=document.getElementById('stockContainer');
+  if(container.children.length>1)button.closest('.stock-group').remove();else alert('At least one item is required.');
+}
+function onUnitTypeChange(select){
+  select.dataset.userSelected = true;
+  const group = select.closest('.stock-group');
+  const ppuInput = group.querySelector('.pieces-per-unit');
+  const mapping = {unit:1,pack:4,box:6,carton:24,bottle:1};
+  const val = select.value;
+  const def = mapping[val]||1;
+  if(!ppuInput.dataset.userEdited){ ppuInput.value = def; }
+  calculateTotal(group);
+}
+document.addEventListener('DOMContentLoaded',()=>{ const first = document.querySelector('.food-item'); if(first) updatePrice(first); });
+</script>
+{% endblock %}

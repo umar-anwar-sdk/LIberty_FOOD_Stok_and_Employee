@@ -9,10 +9,11 @@ from uuid import uuid4
 from django.utils.timezone import localdate
 from core_app.models import Order
 import calendar
-from django.db.models import Sum
+from django.db.models import Sum, Q
+from django.core.paginator import Paginator
 from .models import Employee, Customer
 from .forms import CustomerAccountForm, EmployeeAccountForm, update_account_user
-from .models import Employee, Customer, EmployeeSalary, EmployeeTransaction
+from .models import Employee, Customer, EmployeeSalary, EmployeeTransaction, AuditLog
 from django.utils.dateparse import parse_date
 from django.conf import settings
 from accounts.models import CustomUser
@@ -194,7 +195,14 @@ def customer_remove(request):
     if request.method == "POST":
         customer_id = request.POST.get("customer_id")
         customer = get_object_or_404(Customer, id=customer_id)
+        reason = (request.POST.get("delete_reason") or "").strip()
+        if not reason:
+            messages.error(request, "A delete reason is required.")
+            return redirect("customer_list")
+        AuditLog.objects.create(action="delete", object_type="Customer", object_id=customer.id,
+                                reason=reason, actor=request.user)
         customer.delete()
+        messages.success(request, "Customer deleted and reason recorded.")
         return redirect("customer_list")
 
 
@@ -283,12 +291,19 @@ def employee_list(request):
 def employee_delete(request, employee_id):
     if request.method == "POST":
         employee = get_object_or_404(Employee, id=employee_id)
+        reason = (request.POST.get("delete_reason") or "").strip()
+        if not reason:
+            messages.error(request, "A delete reason is required.")
+            return redirect("employee_detail", employee_id=employee.id)
+        name = f"{employee.first_name} {employee.last_name}"
+        AuditLog.objects.create(action="delete", object_type="Employee", object_id=employee.id,
+                                reason=reason, actor=request.user)
         user = employee.user
         employee.delete()
         # The employee identity must not remain usable after deletion.
         if user:
             user.delete()
-        messages.success(request, f"{employee.first_name} {employee.last_name} has been deleted.")
+        messages.success(request, f"{name} has been deleted and the reason recorded.")
     return redirect('employee_list')
 @login_required
 def employee_detail(request, employee_id):
@@ -457,12 +472,16 @@ def customer_record(request, id):
         'items__food_item'
     ).order_by('-order_date')
 
+    from core_app.ledger import sync_order_ledger, ledger_summary
+    for order in orders:
+        sync_order_ledger(order)
     return render(
         request,
         'customer_record.html',
         {
             'customer': customer,
-            'orders': orders
+            'orders': orders,
+            'ledger_summary': ledger_summary(customer),
         }
     )
 
@@ -474,16 +493,12 @@ def update_payment(request, id):
 
     if request.method == "POST":
 
-        amount = Decimal(request.POST.get("amount") or "0")
-
-        order.paid_amount = order.paid_amount + amount
-
-        if order.paid_amount >= order.total_price:
-            order.payment_status = "Cleared"
-        else:
-            order.payment_status = "Pending"
-
-        order.save()
+        try:
+            from core_app.ledger import record_payment
+            record_payment(order, request.POST.get("amount") or "0", request.POST.get("note", ""))
+        except (ValueError, ArithmeticError):
+            messages.error(request, "Enter a valid payment that does not exceed the outstanding balance.")
+            return redirect("update_payment", id=order.id)
 
         messages.success(request, "Payment updated successfully")
 
@@ -495,4 +510,51 @@ def update_payment(request, id):
     return render(request, "update_payment.html", {
         "order": order
     })
+
+
+@login_required
+def customer_ledger_statement(request, customer_id=None):
+    if is_admin(request.user):
+        customer = get_object_or_404(Customer, pk=customer_id)
+    elif request.user.role == "customer":
+        customer = get_object_or_404(Customer, user=request.user)
+    else:
+        raise PermissionDenied("You do not have permission to access customer ledgers.")
+    from core_app.ledger import customer_ledger, ledger_summary
+    start, end = parse_date(request.GET.get("start", "")), parse_date(request.GET.get("end", ""))
+    if start and end and start > end:
+        messages.error(request, "Start date cannot be after end date.")
+        start = end = None
+    entries = customer_ledger(customer, start=start, end=end, search=request.GET.get("q", ""))
+    opening = Decimal("0.00")
+    if start:
+        for entry in customer_ledger(customer).filter(occurred_at__date__lt=start):
+            opening += entry.debit - entry.credit
+    running = opening
+    page = Paginator(entries, 50).get_page(request.GET.get("page"))
+    for entry in page.object_list:
+        running += entry.debit - entry.credit
+        entry.running_balance = running
+    return render(request, "customer_ledger.html", {"customer": customer, "entries": page,
+        "summary": ledger_summary(customer), "opening_balance": opening, "start": start, "end": end,
+        "query": request.GET.get("q", "")})
+
+
+@login_required
+def employee_salary_statement(request, employee_id=None):
+    if is_admin(request.user):
+        employee = get_object_or_404(Employee, pk=employee_id)
+    elif request.user.role == "employee":
+        employee = get_object_or_404(Employee, user=request.user)
+    else:
+        raise PermissionDenied("You do not have permission to access salary statements.")
+    start, end = parse_date(request.GET.get("start", "")), parse_date(request.GET.get("end", ""))
+    transactions = EmployeeTransaction.objects.filter(employee=employee).select_related("salary_record")
+    if start: transactions = transactions.filter(date__date__gte=start)
+    if end: transactions = transactions.filter(date__date__lte=end)
+    transactions = transactions.order_by("date", "id")
+    totals = transactions.aggregate(taken=Sum("amount", filter=Q(transaction_type="taken")),
+                                    deposited=Sum("amount", filter=Q(transaction_type="deposit")))
+    return render(request, "salary_statement.html", {"employee": employee, "transactions": transactions,
+        "start": start, "end": end, "taken": totals["taken"] or 0, "deposited": totals["deposited"] or 0})
 

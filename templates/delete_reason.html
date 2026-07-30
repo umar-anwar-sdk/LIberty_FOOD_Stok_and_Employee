@@ -1,0 +1,3 @@
+{% extends "base.html" %}
+{% block title %}Confirm Delete · Liberty Food{% endblock %}
+{% block content %}<section class="mx-auto max-w-lg rounded-2xl border border-red-200 bg-white p-7 shadow-soft"><h1 class="text-xl font-extrabold">Delete {{ object }}?</h1><p class="mt-2 text-sm text-slate-500">This action is recorded and requires a reason.</p><form method="post" class="mt-6 space-y-4">{% csrf_token %}<textarea required name="delete_reason" rows="3" class="w-full rounded-xl border p-3" placeholder="Delete reason"></textarea><div class="flex justify-end gap-3"><a href="{% url cancel_url %}" class="rounded-xl border px-4 py-2">Cancel</a><button class="rounded-xl bg-red-600 px-4 py-2 font-semibold text-white">Delete</button></div></form></section>{% endblock %}

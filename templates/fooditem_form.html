@@ -1,9 +1,117 @@
 {% extends "base.html" %}
 {% block title %}{% if item %}Edit{% else %}Add{% endif %} Food Item · Liberty Food{% endblock %}
 {% block content %}
-<div class="mb-7 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between"><div><a href="{% url 'fooditem_list' %}" class="mb-3 inline-flex items-center gap-2 text-sm font-semibold text-slate-500 hover:text-indigo-600"><svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"/></svg> Inventory</a><h1 class="text-2xl font-extrabold text-slate-950 dark:text-white">{% if item %}Edit{% else %}Add{% endif %} food item</h1><p class="mt-2 text-sm text-slate-500">Maintain product information, pricing and supply details.</p></div><div class="flex gap-2"><a href="{% url 'add_category' %}" class="rounded-xl border border-slate-300 px-3.5 py-2 text-xs font-semibold dark:border-slate-700">+ Category</a><a href="{% url 'add_dealer' %}" class="rounded-xl border border-slate-300 px-3.5 py-2 text-xs font-semibold dark:border-slate-700">+ Dealer</a></div></div>
+<div class="mb-7 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+  <div>
+    <a href="{% url 'fooditem_list' %}" class="mb-3 inline-flex items-center gap-2 text-sm font-semibold text-slate-500 hover:text-indigo-600">
+      <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"/></svg> Inventory
+    </a>
+    <h1 class="text-2xl font-extrabold text-slate-950 dark:text-white">{% if item %}Edit{% else %}Add{% endif %} food item</h1>
+    <p class="mt-2 text-sm text-slate-500">Maintain product information, pricing and supply details.</p>
+  </div>
+  <div class="flex gap-2">
+    <a href="{% url 'add_category' %}" class="rounded-xl border border-slate-300 px-3.5 py-2 text-xs font-semibold dark:border-slate-700">+ Category</a>
+    <a href="{% url 'add_dealer' %}" class="rounded-xl border border-slate-300 px-3.5 py-2 text-xs font-semibold dark:border-slate-700">+ Dealer</a>
+  </div>
+</div>
+
 <form method="post" enctype="multipart/form-data" class="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">{% csrf_token %}
-  <section class="space-y-5 rounded-2xl border border-slate-200 bg-white p-6 shadow-soft dark:border-slate-800 dark:bg-slate-900"><div><h2 class="font-bold text-slate-900 dark:text-white">Product details</h2><p class="mt-1 text-xs text-slate-500">Core information shown across inventory and orders</p></div><div><label class="mb-2 block text-sm font-semibold">Name</label><input type="text" name="name" value="{{ item.name|default:'' }}" placeholder="Food item name" required class="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 dark:border-slate-700 dark:bg-slate-950"></div><div><label class="mb-2 block text-sm font-semibold">Description</label><textarea name="description" rows="4" placeholder="Product description" class="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 dark:border-slate-700 dark:bg-slate-950">{{ item.description|default:'' }}</textarea></div><div class="grid gap-5 sm:grid-cols-2"><div><label class="mb-2 block text-sm font-semibold">Price</label><input type="number" step="0.01" name="price" value="{{ item.price|default:'' }}" required class="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 dark:border-slate-700 dark:bg-slate-950"></div><div><label class="mb-2 block text-sm font-semibold">Category</label><select name="category" required class="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 dark:border-slate-700 dark:bg-slate-950">{% for cat in categories %}<option value="{{ cat.id }}" {% if item.category.id == cat.id %}selected{% endif %}>{{ cat.name }}</option>{% endfor %}</select></div></div><div><label class="mb-2 block text-sm font-semibold">Dealer</label><select name="dealer" class="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 dark:border-slate-700 dark:bg-slate-950"><option value="">Select dealer</option>{% for d in dealers %}<option value="{{ d.id }}" {% if item.dealer.id == d.id %}selected{% endif %}>{{ d.name }}</option>{% endfor %}</select></div></section>
-  <aside class="h-fit space-y-5 rounded-2xl border border-slate-200 bg-white p-6 shadow-soft dark:border-slate-800 dark:bg-slate-900"><div><h2 class="font-bold text-slate-900 dark:text-white">Product image</h2><p class="mt-1 text-xs text-slate-500">Use a clear square image</p></div>{% if item.image %}<img src="{{ item.image.url }}" alt="{{ item.name }}" class="aspect-square w-full rounded-2xl object-cover ring-1 ring-slate-200 dark:ring-slate-700">{% endif %}<input type="file" name="image" accept="image/*" class="block w-full rounded-xl border border-slate-300 bg-white p-2.5 text-xs file:mr-3 file:rounded-lg file:border-0 file:bg-indigo-50 file:px-3 file:py-2 file:font-semibold file:text-indigo-700 dark:border-slate-700 dark:bg-slate-950"><div class="flex flex-col gap-3 border-t border-slate-100 pt-5 dark:border-slate-800"><button type="submit" class="rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-indigo-600/20 hover:bg-indigo-700">Save item</button><a href="{% url 'fooditem_list' %}" class="text-center text-sm font-semibold text-slate-500">Cancel</a></div></aside>
+  <section class="space-y-5 rounded-2xl border border-slate-200 bg-white p-6 shadow-soft dark:border-slate-800 dark:bg-slate-900">
+    <div>
+      <h2 class="font-bold text-slate-900 dark:text-white">Product details</h2>
+      <p class="mt-1 text-xs text-slate-500">Core information shown across inventory and orders</p>
+    </div>
+
+    <div>
+      <label class="mb-2 block text-sm font-semibold">Name</label>
+      <input type="text" name="name" value="{{ item.name|default:'' }}" placeholder="Food item name" required class="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 dark:border-slate-700 dark:bg-slate-950">
+    </div>
+
+    <div>
+      <label class="mb-2 block text-sm font-semibold">Description</label>
+      <textarea name="description" rows="4" placeholder="Product description" class="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 dark:border-slate-700 dark:bg-slate-950">{{ item.description|default:'' }}</textarea>
+    </div>
+
+    <div class="grid gap-5 sm:grid-cols-2">
+      <div>
+        <label class="mb-2 block text-sm font-semibold">Price</label>
+        <input type="number" step="0.01" name="price" value="{{ item.price|default:'' }}" required class="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 dark:border-slate-700 dark:bg-slate-950">
+      </div>
+
+      <div>
+        <label class="mb-2 block text-sm font-semibold">Category</label>
+        <select name="category" required class="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 dark:border-slate-700 dark:bg-slate-950">
+          {% for cat in categories %}
+            <option value="{{ cat.id }}" {% if item and item.category.id == cat.id %}selected{% endif %}>{{ cat.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+
+    <div>
+      <label class="mb-2 block text-sm font-semibold">Dealer</label>
+      <select name="dealer" class="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 dark:border-slate-700 dark:bg-slate-950">
+        <option value="">—</option>
+        {% for d in dealers %}
+          <option value="{{ d.id }}" {% if item and item.dealer and item.dealer.id == d.id %}selected{% endif %}>{{ d.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <!-- Packaging configuration -->
+    <div class="mt-4">
+      <h3 class="text-sm font-semibold text-slate-900 dark:text-white">Packaging configuration</h3>
+      <p class="text-xs text-slate-500">Configure units and pieces/bottles per package. Admin-editable per item.</p>
+    </div>
+
+    <div class="grid gap-4 sm:grid-cols-2">
+      <div>
+        <label class="mb-2 block text-sm font-semibold">Default unit</label>
+        <select name="default_unit" class="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none dark:border-slate-700 dark:bg-slate-950">
+          <option value="unit" {% if item and item.default_unit == 'unit' %}selected{% endif %}>Piece</option>
+          <option value="pack" {% if item and item.default_unit == 'pack' %}selected{% endif %}>Pack</option>
+          <option value="box" {% if item and item.default_unit == 'box' %}selected{% endif %}>Box</option>
+          <option value="carton" {% if item and item.default_unit == 'carton' %}selected{% endif %}>Carton</option>
+          <option value="bottle" {% if item and item.default_unit == 'bottle' %}selected{% endif %}>Bottle</option>
+        </select>
+      </div>
+
+      <div>
+        <label class="mb-2 block text-sm font-semibold">Custom unit name (optional)</label>
+        <input type="text" name="custom_unit_name" value="{{ item.custom_unit_name|default:'' }}" placeholder="e.g., Bottle, Spray" class="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none dark:border-slate-700 dark:bg-slate-950">
+      </div>
+    </div>
+
+    <div class="grid gap-4 sm:grid-cols-3">
+      <div>
+        <label class="mb-2 block text-sm font-semibold">Pieces per pack</label>
+        <input type="number" name="pieces_per_pack" min="1" value="{{ item.pieces_per_pack|default:1 }}" class="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none dark:border-slate-700 dark:bg-slate-950">
+      </div>
+      <div>
+        <label class="mb-2 block text-sm font-semibold">Pieces per box</label>
+        <input type="number" name="pieces_per_box" min="0" value="{{ item.pieces_per_box|default:0 }}" class="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none dark:border-slate-700 dark:bg-slate-950">
+      </div>
+      <div>
+        <label class="mb-2 block text-sm font-semibold">Pieces per carton</label>
+        <input type="number" name="pieces_per_carton" min="0" value="{{ item.pieces_per_carton|default:0 }}" class="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none dark:border-slate-700 dark:bg-slate-950">
+      </div>
+    </div>
+
+  </section>
+
+  <aside class="h-fit space-y-5 rounded-2xl border border-slate-200 bg-white p-6 shadow-soft dark:border-slate-800 dark:bg-slate-900">
+    <div>
+      <h2 class="font-bold text-slate-900 dark:text-white">Product image</h2>
+      <p class="mt-1 text-xs text-slate-500">Use a clear square image</p>
+    </div>
+    {% if item and item.image %}
+      <img src="{{ item.image.url }}" alt="{{ item.name }}" class="aspect-square w-full rounded-2xl object-cover ring-1 ring-slate-200 dark:ring-slate-700">
+    {% endif %}
+    <input type="file" name="image" accept="image/*" class="block w-full rounded-xl border border-slate-300 bg-white p-2.5 text-xs file:mr-3 file:rounded-lg file:border-0 file:bg-indigo-50 file:px-3 file:py-2 file:font-semibold file:text-indigo-700 dark:border-slate-700 dark:bg-slate-950">
+    <div class="flex flex-col gap-3 border-t border-slate-100 pt-5 dark:border-slate-800">
+      <button type="submit" class="rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-indigo-600/20 hover:bg-indigo-700">Save item</button>
+      <a href="{% url 'fooditem_list' %}" class="text-center text-sm font-semibold text-slate-500">Cancel</a>
+    </div>
+  </aside>
 </form>
 {% endblock %}
