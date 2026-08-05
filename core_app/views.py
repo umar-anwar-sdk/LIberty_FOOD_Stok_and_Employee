@@ -8,8 +8,7 @@ import json
 import calendar
 from .models import Category, Dealer, FoodItem, Order, OrderItem
 from .ledger import sync_order_ledger, record_payment
-from people_app.models import AuditLog
-from people_app.models import Customer, Employee
+from people_app.models import AuditLog, Customer, Employee, WalkingCustomer
 from django.db.models.functions import ExtractMonth
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
@@ -427,14 +426,30 @@ def order_detail(request, pk):
 def create_order(request):
 
     customers = Customer.objects.all()
+    walking_customers = WalkingCustomer.objects.all()
     food_items = FoodItem.objects.all()
 
     if request.method == "POST":
 
-        customer = get_object_or_404(
-            Customer,
-            id=request.POST.get("customer")
-        )
+        customer_id = request.POST.get("customer")
+        walking_customer_id = request.POST.get("walking_customer")
+        customer = None
+        walking_customer = None
+
+        if customer_id and walking_customer_id:
+            messages.error(request, "Choose either an existing customer or a walking customer, not both.")
+            return redirect("order_add")
+
+        if customer_id:
+            customer = get_object_or_404(Customer, id=customer_id)
+        elif walking_customer_id:
+            walking_customer = get_object_or_404(WalkingCustomer, id=walking_customer_id)
+        else:
+            messages.error(request, "Select a customer or walking customer to create the order.")
+            return redirect("order_add")
+
+        customer_name = request.POST.get("customer_name", "").strip()
+        customer_phone = request.POST.get("customer_phone", "").strip()
 
         try:
             paid_amount = Decimal(request.POST.get("paid_amount") or 0)
@@ -449,7 +464,14 @@ def create_order(request):
         # Keep stock, invoice and ledger writes in one database transaction.
         try:
             with transaction.atomic():
-                order = Order.objects.create(customer=customer, paid_amount=0, payment_status="Pending")
+                order = Order.objects.create(
+                    customer=customer,
+                    walking_customer=walking_customer,
+                    customer_name=customer_name,
+                    customer_phone=customer_phone,
+                    paid_amount=0,
+                    payment_status="Pending",
+                )
                 total_created = False
                 for fid, qty in zip(food_ids, quantities):
                     if not fid or not qty:
@@ -477,7 +499,8 @@ def create_order(request):
 
     return render(request, "create_order.html", {
         "customers": customers,
-        "food_items": food_items
+        "walking_customers": walking_customers,
+        "food_items": food_items,
     })
 @admin_required
 def order_edit(request, pk):

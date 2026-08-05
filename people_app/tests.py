@@ -6,7 +6,7 @@ from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
 
-from core_app.models import Order
+from core_app.models import Order, CustomerManualLedgerEntry
 from .models import Customer, Employee, EmployeeSalary, EmployeeTransaction
 from .views import calculate_earned_salary, current_month_salary
 
@@ -165,3 +165,78 @@ class RoleAccessTests(TestCase):
         self.assertEqual(earned, Decimal("0.00"))
         self.assertIsNone(start)
         self.assertIsNone(end)
+
+    def test_manual_ledger_entry_is_recorded_in_customer_ledger(self):
+        from core_app.ledger import sync_manual_ledger_entry
+        from core_app.models import CustomerLedgerEntry
+
+        entry = CustomerManualLedgerEntry.objects.create(
+            customer=self.customer,
+            entry_type="debit",
+            amount="1200.00",
+            notes="Manual ledger from supplier",
+            entry_date=date(2026, 8, 2),
+        )
+
+        sync_manual_ledger_entry(entry)
+
+        self.assertTrue(CustomerLedgerEntry.objects.filter(
+            customer=self.customer,
+            description__icontains="Manual Ledger Entry",
+            debit=Decimal("1200.00"),
+        ).exists())
+
+    def test_clear_month_sets_salary_as_settled(self):
+        self.client.force_login(self.admin)
+        self.employee.base_salary = "30000.00"
+        self.employee.save(update_fields=["base_salary"])
+        EmployeeTransaction.objects.create(
+            employee=self.employee,
+            salary_record=EmployeeSalary.objects.create(
+                employee=self.employee,
+                month=date(2026, 8, 1),
+                total_salary="30000.00",
+                remaining_salary="20000.00",
+                advance_amount="0.00",
+            ),
+            transaction_type="taken",
+            amount="10000.00",
+            reason="Cash taken",
+            date=timezone.make_aware(datetime(2026, 8, 10, 10, 0)),
+        )
+
+        response = self.client.post(reverse("employee_detail", args=[self.employee.id]), {"action": "clear_month"})
+        self.assertEqual(response.status_code, 302)
+        record = EmployeeSalary.objects.get(employee=self.employee, month=date(2026, 8, 1))
+        self.assertTrue(record.settled)
+        self.assertEqual(record.remaining_salary, Decimal("20000.00"))
+
+    def test_customer_record_page_handles_manual_ledger_entries(self):
+        self.client.force_login(self.admin)
+        CustomerManualLedgerEntry.objects.create(
+            customer=self.customer,
+            entry_type="credit",
+            amount="250.00",
+            notes="Manual ledger note",
+            entry_date=date(2026, 8, 3),
+        )
+
+        response = self.client.get(reverse("customer_record", args=[self.customer.id]))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Manual Ledger Entry")
+        self.assertContains(response, "Manual ledger note")
+
+    def test_manual_ledger_entries_are_shown_in_account_statement(self):
+        self.client.force_login(self.admin)
+        CustomerManualLedgerEntry.objects.create(
+            customer=self.customer,
+            entry_type="debit",
+            amount="250.00",
+            notes="Supplier invoice",
+            entry_date=date(2026, 8, 3),
+        )
+
+        response = self.client.get(reverse("customer_ledger_admin", args=[self.customer.id]))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Manual Ledger Entry")
+        self.assertContains(response, "Supplier invoice")

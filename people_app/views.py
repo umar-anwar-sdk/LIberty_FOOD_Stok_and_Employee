@@ -4,21 +4,35 @@ from django.contrib.auth import get_user_model
 from django.db import transaction
 from django.contrib import messages
 from decimal import Decimal, ROUND_HALF_UP
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 from uuid import uuid4
+from django.utils import timezone
 from django.utils.timezone import localdate
-from core_app.models import Order
+from core_app.models import Order, CustomerManualLedgerEntry
+from core_app.ledger import (
+    sync_order_ledger,
+    sync_manual_ledger_entry,
+    ledger_summary,
+    customer_ledger,
+    walking_customer_ledger,
+    walking_ledger_summary,
+)
 import calendar
 from django.db.models import Sum, Q
+from types import SimpleNamespace
 from django.core.paginator import Paginator
-from .models import Employee, Customer
+from .models import (
+    Employee,
+    Customer,
+    EmployeeSalary,
+    EmployeeTransaction,
+    AuditLog,
+    WalkingCustomer,
+)
 from .forms import CustomerAccountForm, EmployeeAccountForm, update_account_user
-from .models import Employee, Customer, EmployeeSalary, EmployeeTransaction, AuditLog
 from django.utils.dateparse import parse_date
 from django.conf import settings
 from accounts.models import CustomUser
-from .models import Employee, EmployeeTransaction
-from django.http import HttpResponse
 from django.contrib.auth.decorators import login_required
 from accounts.decoraters import (
     admin_required,
@@ -206,6 +220,40 @@ def customer_remove(request):
         return redirect("customer_list")
 
 
+@admin_required
+def walking_customer_list(request):
+    walking_customers = WalkingCustomer.objects.all()
+    return render(request, "walking_customer_list.html", {"walking_customers": walking_customers})
+
+
+@admin_required
+def walking_customer_add(request):
+    if request.method == "POST":
+        WalkingCustomer.objects.create()
+        messages.success(request, "Walking customer token created successfully.")
+    return redirect("walking_customer_list")
+
+
+@admin_required
+def walking_customer_record(request, walking_customer_id):
+    walking_customer = get_object_or_404(WalkingCustomer, id=walking_customer_id)
+    orders = Order.objects.filter(walking_customer=walking_customer).prefetch_related(
+        "items__food_item"
+    ).order_by("-order_date")
+    from core_app.ledger import sync_order_ledger, walking_customer_ledger, walking_ledger_summary
+    for order in orders:
+        sync_order_ledger(order)
+    return render(
+        request,
+        "walking_customer_record.html",
+        {
+            "walking_customer": walking_customer,
+            "orders": orders,
+            "ledger_summary": walking_ledger_summary(walking_customer),
+        }
+    )
+
+
 # ---------------- EMPLOYEES ---------------- #
 @admin_required
 def employee_add(request):
@@ -325,24 +373,30 @@ def employee_detail(request, employee_id):
 
     salary_data = current_month_salary(employee)
 
-    # The monthly row remains the transaction parent, but all monetary fields
-    # are recalculated from the source transactions on every request.
+    # The monthly row remains the transaction parent, but admin actions are
+    # processed before we overwrite the row's displayed values from the current
+    # month calculation, so explicit settlement and transaction posts keep the
+    # persisted salary record consistent.
     if can_manage_salary:
-        salary_record, _ = EmployeeSalary.objects.get_or_create(
+        salary_record = EmployeeSalary.objects.filter(
             employee=employee,
             month=salary_data["month_start"],
-            defaults={
-                "total_salary": salary_data["earned_salary"],
-                "remaining_salary": salary_data["remaining_salary"],
-                "advance_amount": salary_data["cash_taken"],
-            },
-        )
-        salary_record.total_salary = salary_data["earned_salary"]
-        salary_record.remaining_salary = salary_data["remaining_salary"]
-        salary_record.advance_amount = salary_data["cash_taken"]
-        salary_record.save(
-            update_fields=["total_salary", "remaining_salary", "advance_amount"]
-        )
+        ).first()
+        if salary_record is None:
+            salary_record = EmployeeSalary(
+                employee=employee,
+                month=salary_data["month_start"],
+                total_salary=salary_data["earned_salary"],
+                remaining_salary=salary_data["remaining_salary"],
+                advance_amount=salary_data["cash_taken"],
+            )
+        if not (request.method == "POST" and "action" in request.POST):
+            salary_record.total_salary = salary_data["earned_salary"]
+            salary_record.remaining_salary = salary_data["remaining_salary"]
+            salary_record.advance_amount = salary_data["cash_taken"]
+            salary_record.save(
+                update_fields=["total_salary", "remaining_salary", "advance_amount"]
+            )
     else:
         # Employee reads never create or alter payroll rows.
         salary_record = EmployeeSalary.objects.filter(
@@ -365,6 +419,22 @@ def employee_detail(request, employee_id):
     if can_manage_salary and request.method == "POST" and "action" in request.POST:
         action = request.POST.get("action")
 
+        if action == "clear_month":
+            if salary_record is None:
+                salary_record = EmployeeSalary.objects.create(
+                    employee=employee,
+                    month=salary_data["month_start"],
+                    total_salary=salary_data["earned_salary"],
+                    remaining_salary=salary_data["remaining_salary"],
+                    advance_amount=salary_data["cash_taken"],
+                )
+
+            salary_record.settled = True
+            salary_record.settled_at = timezone.now()
+            salary_record.save(update_fields=["total_salary", "remaining_salary", "advance_amount", "settled", "settled_at"])
+            messages.success(request, f"Salary for {salary_record.display_month} has been marked as settled.")
+            return redirect("employee_detail", employee_id=employee.id)
+
         try:
             amount = Decimal(request.POST.get("amount", "0"))
         except:
@@ -384,6 +454,9 @@ def employee_detail(request, employee_id):
                 amount=round_money(amount),
                 reason=reason,
             )
+            salary_record.settled = False
+            salary_record.settled_at = None
+            salary_record.save(update_fields=["settled", "settled_at"])
         else:
             messages.error(request, "Invalid transaction type")
         return redirect("employee_detail", employee_id=employee.id)
@@ -464,7 +537,7 @@ def calculate_salary(request, employee_id):
 @admin_required
 def customer_record(request, id):
 
-    customer = Customer.objects.get(id=id)
+    customer = get_object_or_404(Customer, id=id)
 
     orders = Order.objects.filter(
         customer=customer
@@ -472,18 +545,74 @@ def customer_record(request, id):
         'items__food_item'
     ).order_by('-order_date')
 
-    from core_app.ledger import sync_order_ledger, ledger_summary
     for order in orders:
         sync_order_ledger(order)
+
+    manual_entries = CustomerManualLedgerEntry.objects.filter(customer=customer).order_by('-entry_date', '-id')[:10]
+    manual_totals = manual_entries.aggregate(
+        debit=Sum('amount', filter=Q(entry_type='debit')),
+        credit=Sum('amount', filter=Q(entry_type='credit')),
+    )
+    manual_debit = manual_totals['debit'] or Decimal('0.00')
+    manual_credit = manual_totals['credit'] or Decimal('0.00')
+    manual_balance = manual_debit - manual_credit
+    order_summary = ledger_summary(customer)
+    combined_outstanding = order_summary['outstanding'] + manual_balance
+
     return render(
         request,
         'customer_record.html',
         {
             'customer': customer,
             'orders': orders,
-            'ledger_summary': ledger_summary(customer),
+            'ledger_summary': order_summary,
+            'manual_entries': manual_entries,
+            'manual_summary': {
+                'debit': manual_debit,
+                'credit': manual_credit,
+                'balance': manual_balance,
+            },
+            'combined_outstanding': combined_outstanding,
         }
     )
+
+
+@admin_required
+def customer_manual_entry(request, customer_id):
+    customer = get_object_or_404(Customer, id=customer_id)
+
+    if request.method == 'POST':
+        entry_type = request.POST.get('entry_type')
+        try:
+            amount = Decimal(request.POST.get('amount') or '0')
+        except (ArithmeticError, ValueError):
+            messages.error(request, 'Enter a valid amount.')
+            return redirect('customer_record', customer.id)
+
+        if amount <= 0:
+            messages.error(request, 'Amount must be greater than zero.')
+            return redirect('customer_record', customer.id)
+
+        if entry_type not in {'debit', 'credit'}:
+            messages.error(request, 'Select a valid transaction type.')
+            return redirect('customer_record', customer.id)
+
+        entry_date = parse_date(request.POST.get('entry_date') or '') or date.today()
+        notes = request.POST.get('notes', '').strip()
+        attachment = request.FILES.get('attachment')
+
+        manual_entry = CustomerManualLedgerEntry.objects.create(
+            customer=customer,
+            entry_type=entry_type,
+            amount=amount,
+            notes=notes,
+            entry_date=entry_date,
+            attachment=attachment,
+        )
+        sync_manual_ledger_entry(manual_entry)
+        messages.success(request, 'Manual ledger entry recorded successfully.')
+
+    return redirect('customer_record', customer.id)
 
 
 @admin_required
@@ -502,10 +631,11 @@ def update_payment(request, id):
 
         messages.success(request, "Payment updated successfully")
 
-        return redirect(
-            "customer_record",
-            order.customer.id
-        )
+        if order.customer:
+            return redirect("customer_record", order.customer.id)
+        if order.walking_customer:
+            return redirect("walking_customer_record", order.walking_customer.id)
+        return redirect("order_list")
 
     return render(request, "update_payment.html", {
         "order": order
@@ -525,13 +655,15 @@ def customer_ledger_statement(request, customer_id=None):
     if start and end and start > end:
         messages.error(request, "Start date cannot be after end date.")
         start = end = None
-    entries = customer_ledger(customer, start=start, end=end, search=request.GET.get("q", ""))
+    all_entries = customer_ledger(customer)
+    filtered_entries = customer_ledger(customer, start=start, end=end, search=request.GET.get("q", ""))
     opening = Decimal("0.00")
     if start:
-        for entry in customer_ledger(customer).filter(occurred_at__date__lt=start):
-            opening += entry.debit - entry.credit
+        for entry in all_entries:
+            if entry.occurred_at.date() < start:
+                opening += entry.debit - entry.credit
     running = opening
-    page = Paginator(entries, 50).get_page(request.GET.get("page"))
+    page = Paginator(filtered_entries, 50).get_page(request.GET.get("page"))
     for entry in page.object_list:
         running += entry.debit - entry.credit
         entry.running_balance = running
@@ -548,13 +680,38 @@ def employee_salary_statement(request, employee_id=None):
         employee = get_object_or_404(Employee, user=request.user)
     else:
         raise PermissionDenied("You do not have permission to access salary statements.")
-    start, end = parse_date(request.GET.get("start", "")), parse_date(request.GET.get("end", ""))
-    transactions = EmployeeTransaction.objects.filter(employee=employee).select_related("salary_record")
-    if start: transactions = transactions.filter(date__date__gte=start)
-    if end: transactions = transactions.filter(date__date__lte=end)
+
+    month_value = request.GET.get("month")
+    month = parse_date(month_value) if month_value else localdate().replace(day=1)
+    if month:
+        month_start = month.replace(day=1)
+        if month_start.month == 12:
+            month_end = month_start.replace(year=month_start.year + 1, month=1, day=1) - timedelta(days=1)
+        else:
+            month_end = month_start.replace(month=month_start.month + 1, day=1) - timedelta(days=1)
+    else:
+        month_start = localdate().replace(day=1)
+        if month_start.month == 12:
+            month_end = month_start.replace(year=month_start.year + 1, month=1, day=1) - timedelta(days=1)
+        else:
+            month_end = month_start.replace(month=month_start.month + 1, day=1) - timedelta(days=1)
+
+    transactions = EmployeeTransaction.objects.filter(employee=employee, date__date__range=(month_start, month_end)).select_related("salary_record")
     transactions = transactions.order_by("date", "id")
-    totals = transactions.aggregate(taken=Sum("amount", filter=Q(transaction_type="taken")),
-                                    deposited=Sum("amount", filter=Q(transaction_type="deposit")))
-    return render(request, "salary_statement.html", {"employee": employee, "transactions": transactions,
-        "start": start, "end": end, "taken": totals["taken"] or 0, "deposited": totals["deposited"] or 0})
+    totals = transactions.aggregate(
+        taken=Sum("amount", filter=Q(transaction_type="taken")),
+        deposited=Sum("amount", filter=Q(transaction_type="deposit")),
+    )
+    return render(
+        request,
+        "salary_statement.html",
+        {
+            "employee": employee,
+            "transactions": transactions,
+            "month": month_start,
+            "taken": totals["taken"] or 0,
+            "deposited": totals["deposited"] or 0,
+            "month_label": month_start.strftime("%B %Y"),
+        },
+    )
 

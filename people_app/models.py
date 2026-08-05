@@ -1,7 +1,7 @@
 from django.db import models
+from django.db.models import Max
 from django.conf import settings
-from django.utils import timezone# Create your models here.
-from django.conf import settings
+from django.utils import timezone
 
 
 # 🔹 Customer Model
@@ -15,6 +15,23 @@ class Customer(models.Model):
 
     def __str__(self):
         return self.name
+
+
+class WalkingCustomer(models.Model):
+    token = models.PositiveIntegerField(unique=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ("token",)
+
+    def save(self, *args, **kwargs):
+        if not self.token:
+            last_token = self.__class__.objects.aggregate(Max("token"))
+            self.token = (last_token["token__max"] or 0) + 1
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"Order no {self.token}"
 
 
 class AuditLog(models.Model):
@@ -71,9 +88,18 @@ class EmployeeSalary(models.Model):
     total_salary = models.DecimalField(max_digits=10, decimal_places=2)
     remaining_salary = models.DecimalField(max_digits=10, decimal_places=2)
     advance_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    settled = models.BooleanField(default=False)
+    settled_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ("month",)
 
     def __str__(self):
         return f"{self.employee} - {self.month.strftime('%B %Y')}"
+
+    @property
+    def display_month(self):
+        return self.month.strftime('%B %Y')
 
 
 # 🔹 Salary Transactions

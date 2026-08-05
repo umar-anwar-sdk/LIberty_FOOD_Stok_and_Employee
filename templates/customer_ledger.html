@@ -48,7 +48,14 @@
 			{% for entry in entries %}
 				<tr class="border-t hover:bg-slate-50 dark:hover:bg-slate-800/40">
 					<td class="p-3">{{ entry.occurred_at|date:"d M Y H:i" }}</td>
-					<td class="p-3">{{ entry.description }}</td>
+					<td class="p-3">
+						{% if 'Manual Ledger Entry' in entry.description %}
+							<span class="font-semibold text-slate-900 dark:text-white">Manual Ledger Entry</span>
+							{% if entry.description|length > 20 %}<br><span class="text-xs text-slate-500">{{ entry.description|cut:"Manual Ledger Entry"|cut:"- " }}</span>{% endif %}
+						{% else %}
+							{{ entry.description }}
+						{% endif %}
+					</td>
 					<td class="p-3 text-right">{% if entry.debit %}Rs. {{ entry.debit }}{% endif %}</td>
 					<td class="p-3 text-right">{% if entry.credit %}Rs. {{ entry.credit }}{% endif %}</td>
 					<td class="p-3 text-right font-bold">Rs. {{ entry.running_balance }}</td>

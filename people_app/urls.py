@@ -9,11 +9,12 @@ urlpatterns = [
     path('customers/remove/', views.customer_remove, name='customer_remove'),
     path('customer-record/<int:id>/', views.customer_record, name='customer_record'),
     path('customers/<int:customer_id>/ledger/', views.customer_ledger_statement, name='customer_ledger_admin'),
+    path('customers/<int:customer_id>/manual-entry/', views.customer_manual_entry, name='customer_manual_entry'),
     path('my-ledger/', views.customer_ledger_statement, name='customer_ledger'),
+    path('walking-customers/', views.walking_customer_list, name='walking_customer_list'),
+    path('walking-customers/add/', views.walking_customer_add, name='walking_customer_add'),
+    path('walking-customers/<int:walking_customer_id>/', views.walking_customer_record, name='walking_customer_record'),
     path("orders/payment/<int:id>/", views.update_payment, name="update_payment"),
-    
-    
-    
 
 
     # Employees

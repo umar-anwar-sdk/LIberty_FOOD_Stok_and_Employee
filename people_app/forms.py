@@ -1,5 +1,8 @@
 """Admin-only forms for profiles that also own a Django login account."""
 
+from datetime import date
+from decimal import Decimal
+
 from django import forms
 from django.contrib.auth import get_user_model
 
@@ -65,3 +68,22 @@ class EmployeeAccountForm(AccountEmailMixin, forms.Form):
     salary = forms.DecimalField(max_digits=10, decimal_places=2, min_value=0)
     email = forms.EmailField()
     password = forms.CharField(widget=forms.PasswordInput(render_value=False))
+
+
+class ManualCustomerOrderForm(forms.Form):
+    order_date = forms.DateField(required=True, initial=date.today)
+    bill_amount = forms.DecimalField(max_digits=12, decimal_places=2, min_value=0.01)
+    paid_amount = forms.DecimalField(max_digits=12, decimal_places=2, min_value=0, required=False, initial=0)
+    notes = forms.CharField(widget=forms.Textarea, required=False)
+    bill_snapshot = forms.ImageField(required=False)
+
+    def clean_paid_amount(self):
+        paid = self.cleaned_data.get("paid_amount") or Decimal("0.00")
+        bill = self.cleaned_data.get("bill_amount")
+        if bill is None:
+            return paid
+        if paid < 0:
+            raise forms.ValidationError("Paid amount cannot be negative.")
+        if paid > bill:
+            raise forms.ValidationError("Paid amount cannot exceed bill amount.")
+        return paid

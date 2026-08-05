@@ -1,5 +1,5 @@
 from django.db import models
-from people_app.models import Customer
+from people_app.models import Customer, WalkingCustomer
 
 
 STATUS_CHOICES = [
@@ -123,10 +123,31 @@ class Order(models.Model):
         default="Pending"
     )
 
+    customer_name = models.CharField(max_length=120, blank=True, default='')
+    customer_phone = models.CharField(max_length=20, blank=True, default='')
     customer = models.ForeignKey(
         Customer,
-        on_delete=models.CASCADE
+        blank=True,
+        null=True,
+        related_name="orders",
+        on_delete=models.SET_NULL,
     )
+    walking_customer = models.ForeignKey(
+        WalkingCustomer,
+        blank=True,
+        null=True,
+        related_name="walking_orders",
+        on_delete=models.SET_NULL,
+    )
+    manual_order = models.BooleanField(default=False)
+    manual_order_amount = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        null=True,
+        blank=True,
+    )
+    bill_snapshot = models.ImageField(upload_to='manual_orders/', null=True, blank=True)
+    notes = models.TextField(blank=True, default='')
 
     order_date = models.DateTimeField(auto_now_add=True)
 
@@ -141,15 +162,43 @@ class Order(models.Model):
         decimal_places=2,
         default=0
     )
+
     @property
     def total_price(self):
+        if self.manual_order:
+            return self.manual_order_amount or 0
         return sum(
             item.line_total
             for item in self.items.all()
         )
+
     @property
     def remaining_amount(self):
         return self.total_price - self.paid_amount
+
+    @property
+    def customer_label(self):
+        if self.customer:
+            return self.customer.name
+        if self.walking_customer:
+            return str(self.walking_customer)
+        return self.customer_name or "Walk-in"
+
+    @property
+    def customer_link_id(self):
+        if self.customer:
+            return self.customer.id
+        if self.walking_customer:
+            return self.walking_customer.id
+        return None
+
+    @property
+    def customer_url_text(self):
+        if self.walking_customer:
+            return "walking_customer_record"
+        if self.customer:
+            return "customer_record"
+        return None
 
 
 # 🔹 Order Items
@@ -217,5 +266,87 @@ class CustomerLedgerEntry(models.Model):
         constraints = [
             models.UniqueConstraint(fields=["order", "entry_type"], name="one_order_charge_per_order_type"),
         ]
+
+    @property
+    def full_description(self):
+        if self.entry_type == "order":
+            return f"Order #{self.order.id}"
+        return self.description or self.get_entry_type_display()
+
+
+class WalkingCustomerLedgerEntry(models.Model):
+    ENTRY_TYPES = (
+        ("order", "Order charge"),
+        ("payment", "Payment received"),
+        ("refund", "Refund"),
+        ("adjustment", "Adjustment"),
+    )
+    walking_customer = models.ForeignKey(
+        WalkingCustomer,
+        on_delete=models.CASCADE,
+        related_name="ledger_entries",
+    )
+    order = models.ForeignKey(
+        Order,
+        null=True,
+        blank=True,
+        on_delete=models.CASCADE,
+        related_name="walking_ledger_entries",
+    )
+    payment = models.OneToOneField(
+        Payment,
+        null=True,
+        blank=True,
+        on_delete=models.CASCADE,
+        related_name="walking_ledger_entry",
+    )
+    entry_type = models.CharField(max_length=20, choices=ENTRY_TYPES)
+    debit = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    credit = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    description = models.CharField(max_length=255, blank=True)
+    occurred_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ("occurred_at", "id")
+        indexes = [models.Index(fields=["walking_customer", "occurred_at"])]
+        constraints = [
+            models.UniqueConstraint(fields=["order", "entry_type"], name="one_walking_order_charge_per_order_type"),
+        ]
+
+    def __str__(self):
+        return f"{self.walking_customer} - {self.get_entry_type_display()}"
+
+
+class CustomerManualLedgerEntry(models.Model):
+    ENTRY_TYPES = (
+        ("debit", "Debit"),
+        ("credit", "Credit"),
+    )
+
+    customer = models.ForeignKey(
+        Customer,
+        on_delete=models.CASCADE,
+        related_name="manual_ledger_entries",
+    )
+    order = models.ForeignKey(
+        'Order',
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name='manual_order_entries',
+    )
+    entry_type = models.CharField(max_length=10, choices=ENTRY_TYPES)
+    amount = models.DecimalField(max_digits=12, decimal_places=2)
+    notes = models.TextField(blank=True)
+    entry_date = models.DateField()
+    attachment = models.FileField(blank=True, null=True, upload_to="customer_slips/")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ("entry_date", "id")
+
+    def __str__(self):
+        return f"{self.get_entry_type_display()} Rs. {self.amount} - {self.customer}"
 
 # Create your models here.

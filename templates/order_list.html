@@ -33,7 +33,7 @@
         {% for order in orders %}
           <tr class="align-top hover:bg-slate-50 dark:hover:bg-slate-800/40">
             <td class="px-6 py-4 font-mono text-sm font-bold text-indigo-600 dark:text-indigo-400">#{{ order.id }}</td>
-            <td class="whitespace-nowrap px-6 py-4"><a href="{% url 'customer_record' order.customer.id %}" class="text-sm font-semibold text-slate-900 hover:text-indigo-600 dark:text-white">{{ order.customer.name }}</a></td>
+            <td class="whitespace-nowrap px-6 py-4">{% if order.customer %}<a href="{% url 'customer_record' order.customer.id %}" class="text-sm font-semibold text-slate-900 hover:text-indigo-600 dark:text-white">{{ order.customer.name }}</a>{% elif order.walking_customer %}<a href="{% url 'walking_customer_record' order.walking_customer.id %}" class="text-sm font-semibold text-slate-900 hover:text-indigo-600 dark:text-white">{{ order.walking_customer }}</a>{% else %}<span class="text-sm font-semibold text-slate-900 dark:text-white">{{ order.customer_label }}</span>{% endif %}</td>
             <td class="whitespace-nowrap px-6 py-4 text-sm text-slate-500">{{ order.order_date|date:"d M Y H:i" }}</td>
             <td class="px-6 py-4">
               <form method="post" action="{% url 'update_order_status' order.id %}">{% csrf_token %}
