@@ -107,11 +107,12 @@ class EmployeeTransaction(models.Model):
     TRANSACTION_TYPES = (
         ("taken", "Cash Taken"),
         ("deposit", "Cash Deposit"),
+        ("salary_payment", "Salary Payment"),
     )
 
     employee = models.ForeignKey(Employee, on_delete=models.CASCADE, related_name="transactions")
     salary_record = models.ForeignKey(EmployeeSalary, on_delete=models.CASCADE, related_name="transactions")
-    transaction_type = models.CharField(max_length=10, choices=TRANSACTION_TYPES)
+    transaction_type = models.CharField(max_length=20, choices=TRANSACTION_TYPES)
     amount = models.DecimalField(max_digits=10, decimal_places=2)
     reason = models.TextField(null=True, blank=True)
     date = models.DateTimeField(auto_now_add=True)

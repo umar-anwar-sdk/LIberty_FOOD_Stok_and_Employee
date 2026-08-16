@@ -31,11 +31,13 @@ def sync_order_ledger(order):
         ledger_kwargs = {
             "walking_customer": order.walking_customer,
         }
-    else:
+    elif order.customer is not None:
         ledger_model = CustomerLedgerEntry
         ledger_kwargs = {
             "customer": order.customer,
         }
+    else:
+        return None
 
     charge, _ = ledger_model.objects.update_or_create(
         order=order,

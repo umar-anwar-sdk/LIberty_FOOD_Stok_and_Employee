@@ -55,6 +55,7 @@ def login_view(request):
 
         if user is not None:
             login(request, user)
+            request.session.set_expiry(3600)
             logger.info(
                 "auth login redirect: user_id=%s role=%s destination=home",
                 user.pk,

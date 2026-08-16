@@ -2,7 +2,7 @@ from datetime import date, datetime
 from decimal import Decimal
 
 from django.contrib.auth import get_user_model
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from django.urls import reverse
 from django.utils import timezone
 
@@ -132,13 +132,41 @@ class RoleAccessTests(TestCase):
 
         result = current_month_salary(self.employee, as_of=date(2026, 7, 29))
 
-        # July 2026 has 31 days: 20,000 / 31 * 29 = 18,709.68.
-        self.assertEqual(result["earned_salary"], Decimal("18709.68"))
+        self.assertEqual(result["earned_salary"], Decimal("19333.33"))
         self.assertEqual(result["cash_taken"], Decimal("3000.00"))
         self.assertEqual(result["cash_added"], Decimal("1000.00"))
-        self.assertEqual(result["daily_salary"], Decimal("645.16"))
+        self.assertEqual(result["daily_salary"], Decimal("666.67"))
         self.assertEqual(result["days_worked"], 29)
-        self.assertEqual(result["remaining_salary"], Decimal("14709.68"))
+        self.assertEqual(result["remaining_salary"], Decimal("15333.33"))
+
+    @override_settings(SESSION_COOKIE_AGE=3600)
+    def test_session_expires_after_one_hour(self):
+        self.client.force_login(self.admin)
+        self.assertIsNotNone(self.client.session.get_expiry_age())
+        self.assertLessEqual(self.client.session.get_expiry_age(), 3600)
+
+    def test_completed_months_use_a_30_day_salary_basis(self):
+        self.employee.base_salary = "30000.00"
+        self.employee.join_date = date(2026, 2, 1)
+        self.employee.save(update_fields=["base_salary", "join_date"])
+
+        earned, start, end = calculate_earned_salary(
+            self.employee,
+            date(2026, 2, 1),
+            date(2026, 2, 28),
+            as_of=date(2026, 3, 1),
+        )
+        self.assertEqual(start, date(2026, 2, 1))
+        self.assertEqual(end, date(2026, 2, 28))
+        self.assertEqual(earned, Decimal("30000.00"))
+
+        partial, _, _ = calculate_earned_salary(
+            self.employee,
+            date(2026, 8, 1),
+            date(2026, 8, 10),
+            as_of=date(2026, 8, 10),
+        )
+        self.assertEqual(partial, Decimal("10000.00"))
 
     def test_joining_day_is_the_first_paid_day_and_future_joining_earns_zero(self):
         self.employee.base_salary = "20000.00"
@@ -149,13 +177,13 @@ class RoleAccessTests(TestCase):
         )
         self.assertEqual(start, date(2026, 7, 15))
         self.assertEqual(end, date(2026, 7, 29))
-        self.assertEqual(earned, Decimal("9677.42"))  # 15 inclusive paid days
+        self.assertEqual(earned, Decimal("10000.00"))  # 15 inclusive paid days
 
         self.employee.join_date = date(2026, 7, 29)
         earned, start, end = calculate_earned_salary(
             self.employee, date(2026, 7, 1), date(2026, 7, 29), as_of=date(2026, 7, 29)
         )
-        self.assertEqual(earned, Decimal("645.16"))
+        self.assertEqual(earned, Decimal("666.67"))
         self.assertEqual(start, end)
 
         self.employee.join_date = date(2026, 7, 30)
@@ -210,6 +238,74 @@ class RoleAccessTests(TestCase):
         record = EmployeeSalary.objects.get(employee=self.employee, month=date(2026, 8, 1))
         self.assertTrue(record.settled)
         self.assertEqual(record.remaining_salary, Decimal("20000.00"))
+
+    def test_salary_payment_records_a_monthly_settlement_and_prevents_overpayment(self):
+        self.client.force_login(self.admin)
+        self.employee.base_salary = "30000.00"
+        self.employee.join_date = date(2026, 8, 1)
+        self.employee.save(update_fields=["base_salary", "join_date"])
+        salary_record = EmployeeSalary.objects.create(
+            employee=self.employee,
+            month=date(2026, 8, 1),
+            total_salary="30000.00",
+            remaining_salary="30000.00",
+            advance_amount="0.00",
+        )
+
+        response = self.client.post(
+            reverse("employee_detail", args=[self.employee.id]),
+            {
+                "action": "salary_payment",
+                "salary_month": "2026-08",
+                "amount": "15000.00",
+                "reason": "Salary paid",
+            },
+        )
+        self.assertEqual(response.status_code, 302)
+        salary_record.refresh_from_db()
+        self.assertEqual(salary_record.remaining_salary, Decimal("15000.00"))
+        payment = EmployeeTransaction.objects.get(
+            employee=self.employee,
+            salary_record=salary_record,
+            transaction_type="salary_payment",
+        )
+        self.assertEqual(payment.amount, Decimal("15000.00"))
+
+        overpayment_response = self.client.post(
+            reverse("employee_detail", args=[self.employee.id]),
+            {
+                "action": "salary_payment",
+                "salary_month": "2026-08",
+                "amount": "20000.00",
+                "reason": "Too much",
+            },
+        )
+        self.assertEqual(overpayment_response.status_code, 302)
+        self.assertEqual(
+            EmployeeTransaction.objects.filter(
+                employee=self.employee,
+                salary_record=salary_record,
+                transaction_type="salary_payment",
+            ).count(),
+            1,
+        )
+
+    def test_sync_order_ledger_skips_orders_without_customer_links(self):
+        from core_app.ledger import sync_order_ledger
+
+        order = Order.objects.create(
+            customer=None,
+            walking_customer=None,
+            customer_name="Walk-in",
+            customer_phone="123",
+            paid_amount="0.00",
+        )
+
+        result = sync_order_ledger(order)
+
+        self.assertIsNone(result)
+        self.assertFalse(order.ledger_entries.exists())
+        self.assertFalse(order.walking_ledger_entries.exists())
 
     def test_customer_record_page_handles_manual_ledger_entries(self):
         self.client.force_login(self.admin)

@@ -210,6 +210,18 @@
   </div>
 
   <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const dateInputs = document.querySelectorAll('input[type="date"], input[type="month"], input[type="datetime-local"]');
+      dateInputs.forEach(function (input) {
+        input.addEventListener('click', function () {
+          input.focus();
+          if (typeof input.showPicker === 'function') {
+            input.showPicker();
+          }
+        });
+      });
+    });
+
     const sidebar = document.getElementById('sidebar');
     const overlay = document.getElementById('mobile-overlay');
     const openSidebar = () => {

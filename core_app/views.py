@@ -431,21 +431,18 @@ def create_order(request):
 
     if request.method == "POST":
 
-        customer_id = request.POST.get("customer")
-        walking_customer_id = request.POST.get("walking_customer")
+        customer_value = request.POST.get("customer")
         customer = None
         walking_customer = None
 
-        if customer_id and walking_customer_id:
-            messages.error(request, "Choose either an existing customer or a walking customer, not both.")
-            return redirect("order_add")
-
-        if customer_id:
+        if customer_value == "walking":
+            customer = None
+            walking_customer = None
+        elif customer_value and str(customer_value).startswith("customer:"):
+            customer_id = customer_value.split(":", 1)[1]
             customer = get_object_or_404(Customer, id=customer_id)
-        elif walking_customer_id:
-            walking_customer = get_object_or_404(WalkingCustomer, id=walking_customer_id)
         else:
-            messages.error(request, "Select a customer or walking customer to create the order.")
+            messages.error(request, "Select a customer or choose Walking Customer to create the order.")
             return redirect("order_add")
 
         customer_name = request.POST.get("customer_name", "").strip()

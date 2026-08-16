@@ -32,6 +32,8 @@ AUTH_USER_MODEL = "accounts.CustomUser"
 AUTHENTICATION_BACKENDS = ["accounts.backends.EmailBackend"]
 LOGIN_URL = "login"
 LOGIN_REDIRECT_URL = "home"
+SESSION_COOKIE_AGE = 3600
+SESSION_SAVE_EVERY_REQUEST = False
 
 # Authentication diagnostics intentionally exclude passwords and hashes.  They
 # show the request path and lookup outcomes while investigating login issues.
