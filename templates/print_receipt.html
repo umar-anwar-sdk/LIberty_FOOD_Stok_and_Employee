@@ -1,0 +1,49 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Print Receipt</title>
+<style>
+  /* Compact receipt style for thermal printers */
+  @media print { @page { margin: 0; } body { margin:0; } }
+  body { font-family: monospace, Courier, monospace; font-size:12px; line-height:1.2; color:#000; padding:6px; }
+  .center { text-align:center; }
+  .bold { font-weight:700; }
+  .sep { border-top:1px dashed #000; margin:6px 0; }
+  table { width:100%; border-collapse:collapse; }
+  td { vertical-align:top; }
+  .right { text-align:right; }
+</style>
+</head>
+<body>
+  <div class="center bold">Liberty Food</div>
+  <div class="center">{{ title }}</div>
+  <div class="sep"></div>
+  <div>Employee: {{ employee }}</div>
+  {% if month_label %}<div>Month: {{ month_label }}</div>{% endif %}
+  <div class="sep"></div>
+  <table>
+    <thead>
+      <tr><td>Date</td><td class="right">Amt</td></tr>
+    </thead>
+    <tbody>
+      {% for it in items %}
+        <tr>
+          <td>{{ it.date|date:"d M H:i" }} {{ it.get_transaction_type_display }}</td>
+          <td class="right">Rs. {{ it.amount }}</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  <div class="sep"></div>
+  {% if summary %}
+    <div>Salary: Rs. {{ summary.total_salary|default:"0" }}</div>
+    <div>Cash Taken: Rs. {{ summary.cash_taken|default:"0" }}</div>
+    <div>Remaining: Rs. {{ summary.remaining_salary|default:"0" }}</div>
+    {% if summary.advance %}<div>Advance: Rs. {{ summary.advance }}</div>{% endif %}
+  {% endif %}
+  <div class="sep"></div>
+  <div class="center">Thank you</div>
+  <script>window.print();</script>
+</body>
+</html>

@@ -70,6 +70,18 @@ class EmployeeAccountForm(AccountEmailMixin, forms.Form):
     password = forms.CharField(widget=forms.PasswordInput(render_value=False))
 
 
+class EmployeeSelfForm(AccountEmailMixin, forms.Form):
+    """Form for employee self-edit. Only includes editable fields.
+
+    Admin-only fields (position, join_date, salary) are intentionally
+    excluded so employees cannot modify them.
+    """
+    first_name = forms.CharField(max_length=50)
+    last_name = forms.CharField(max_length=50)
+    email = forms.EmailField()
+    password = forms.CharField(widget=forms.PasswordInput(render_value=False), required=False)
+
+
 class ManualCustomerOrderForm(forms.Form):
     order_date = forms.DateField(required=True, initial=date.today)
     bill_amount = forms.DecimalField(max_digits=12, decimal_places=2, min_value=0.01)

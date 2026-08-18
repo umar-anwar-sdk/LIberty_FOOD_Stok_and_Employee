@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block title %}Edit Profile · Liberty Food{% endblock %}
+{% block content %}
+<div class="mx-auto max-w-3xl">
+  <a href="{% url 'profile' %}" class="mb-4 inline-flex items-center gap-2 text-sm font-semibold text-slate-500 hover:text-indigo-600">
+    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"/></svg>
+    Profile
+  </a>
+
+  <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-soft dark:border-slate-800 dark:bg-slate-900 sm:p-8">
+    <h1 class="text-xl font-extrabold text-slate-950 dark:text-white">Edit profile</h1>
+    <p class="mt-1 text-sm text-slate-500">Update your personal and contact information.</p>
+
+    <form method="POST" enctype="multipart/form-data" class="mt-7">{% csrf_token %}
+      <div class="grid gap-5 sm:grid-cols-2">
+        <div>
+          <label class="mb-2 block text-sm font-semibold">First name</label>
+          <input type="text" name="first_name" value="{{ request.user.first_name }}" class="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm dark:border-slate-700 dark:bg-slate-950">
+        </div>
+
+        <div>
+          <label class="mb-2 block text-sm font-semibold">Last name</label>
+          <input type="text" name="last_name" value="{{ request.user.last_name }}" class="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm dark:border-slate-700 dark:bg-slate-950">
+        </div>
+
+        <div>
+          <label class="mb-2 block text-sm font-semibold">Email</label>
+          <input type="email" name="email" value="{{ request.user.email }}" class="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm dark:border-slate-700 dark:bg-slate-950">
+        </div>
+
+        <div>
+          <label class="mb-2 block text-sm font-semibold">Phone</label>
+          <input type="text" name="phone" value="{{ request.user.phone }}" class="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm dark:border-slate-700 dark:bg-slate-950">
+        </div>
+
+        <div>
+          <label class="mb-2 block text-sm font-semibold">Password</label>
+          <input type="password" name="password" autocomplete="new-password" class="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm dark:border-slate-700 dark:bg-slate-950">
+          <p class="mt-1 text-xs text-slate-500">Leave blank to keep your current password.</p>
+        </div>
+
+        {% if request.user.role == 'customer' %}
+        <div class="sm:col-span-2">
+          <label class="mb-2 block text-sm font-semibold">Customer name</label>
+          <input type="text" name="customer_name" value="{{ customer.name|default:request.user.first_name }}" class="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm dark:border-slate-700 dark:bg-slate-950">
+        </div>
+
+        <div class="sm:col-span-2">
+          <label class="mb-2 block text-sm font-semibold">Address</label>
+          <textarea name="address" rows="3" class="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm dark:border-slate-700 dark:bg-slate-950">{{ customer.address|default:'' }}</textarea>
+        </div>
+        {% endif %}
+
+        <div class="sm:col-span-2">
+          <label class="mb-2 block text-sm font-semibold">Profile image</label>
+          {% if request.user.profile_image %}
+            <img src="{{ request.user.profile_image.url }}" class="mb-3 h-20 w-20 rounded-xl object-cover">
+          {% endif %}
+          <input type="file" name="profile_image" class="block w-full text-sm text-slate-500 file:mr-4 file:rounded-full file:border-0 file:bg-indigo-600 file:px-4 file:py-2 file:text-sm file:text-white">
+        </div>
+
+      </div>
+
+      <div class="mt-6 flex items-center justify-end gap-3">
+        <a href="{% url 'profile' %}" class="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50">Cancel</a>
+        <button type="submit" class="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white">Save changes</button>
+      </div>
+    </form>
+  </section>
+</div>
+{% endblock %}

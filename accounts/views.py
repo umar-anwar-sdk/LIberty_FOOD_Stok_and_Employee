@@ -160,26 +160,66 @@ def profile(request):
     return render(request, 'profile.html')
 
 
-@admin_required
+@login_required
 def edit_profile(request):
-
+    # Allow users to edit their own profile. Admins may continue to use
+    # admin interfaces for broader edits; this endpoint updates only the
+    # authenticated user's record and associated customer row when present.
     if request.method == "POST":
-
         user = request.user
-        user.first_name = request.POST.get("first_name")
-        user.last_name = request.POST.get("last_name")
+        # Basic personal fields
+        first_name = request.POST.get("first_name")
+        last_name = request.POST.get("last_name")
+        if first_name is not None:
+            user.first_name = first_name
+        if last_name is not None:
+            user.last_name = last_name
+
         email = request.POST.get("email", "").strip().lower()
         if User.objects.filter(email__iexact=email).exclude(pk=user.pk).exists():
             messages.error(request, "Email already exists")
             return redirect("edit_profile")
         user.email = email
-        user.phone = request.POST.get("phone")
 
+        # Phone and profile image
+        user.phone = request.POST.get("phone")
         if request.FILES.get("profile_image"):
             user.profile_image = request.FILES["profile_image"]
 
+        # Password: only update when explicitly provided
+        new_password = request.POST.get("password", "")
+        if new_password:
+            user.set_password(new_password)
+
         user.save()
+
+        # If this user is also a Customer, update the Customer record fields
+        if getattr(user, "role", None) == "customer":
+            try:
+                customer = Customer.objects.get(user=user)
+            except Customer.DoesNotExist:
+                customer = None
+            if customer is not None:
+                # Update customer-facing fields when provided
+                name = request.POST.get("customer_name")
+                if name is not None:
+                    customer.name = name
+                # Address and phone may be intentionally emptied by the user;
+                # presence in POST implies intentional change.
+                if "address" in request.POST:
+                    customer.address = request.POST.get("address")
+                if "phone" in request.POST:
+                    customer.phone = request.POST.get("phone")
+                customer.email = user.email
+                customer.save()
 
         return redirect("profile")
 
-    return render(request, "edit_profile.html")
+    # Provide customer record to template when available for pre-filling
+    customer = None
+    if request.user.role == "customer":
+        try:
+            customer = Customer.objects.get(user=request.user)
+        except Customer.DoesNotExist:
+            customer = None
+    return render(request, "edit_profile_user.html", {"customer": customer})

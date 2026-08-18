@@ -28,7 +28,7 @@ from .models import (
     AuditLog,
     WalkingCustomer,
 )
-from .forms import CustomerAccountForm, EmployeeAccountForm, update_account_user
+from .forms import CustomerAccountForm, EmployeeAccountForm, EmployeeSelfForm, update_account_user
 from django.utils.dateparse import parse_date
 from django.conf import settings
 from accounts.models import CustomUser
@@ -249,10 +249,17 @@ def customer_update(request, customer_id):
                     password=form.cleaned_data["password"],
                     role="customer",
                 )
-            customer.name = form.cleaned_data["name"]
-            customer.email = form.cleaned_data["email"]
-            customer.phone = form.cleaned_data["phone"]
-            customer.address = form.cleaned_data["address"]
+            # Only update fields that the admin explicitly changed in the form.
+            if "name" in form.changed_data:
+                customer.name = form.cleaned_data["name"]
+            if "email" in form.changed_data:
+                customer.email = form.cleaned_data["email"]
+            # Phone/address may be intentionally cleared (empty string) - treat
+            # presence in changed_data as the user's intent to overwrite.
+            if "phone" in form.changed_data:
+                customer.phone = form.cleaned_data.get("phone")
+            if "address" in form.changed_data:
+                customer.address = form.cleaned_data.get("address")
             customer.save()
         messages.success(request, "Customer account updated successfully.")
         return redirect("customer_list")
@@ -274,10 +281,20 @@ def customer_remove(request):
         return redirect("customer_list")
 
 
-@admin_required
-def walking_customer_list(request):
-    walking_customers = WalkingCustomer.objects.all()
-    return render(request, "walking_customer_list.html", {"walking_customers": walking_customers})
+@login_required
+def customer_record(request, id):
+    # Admin can view any customer. A logged-in customer may view only their
+    # own record. This prevents admins seeing the customer UI only when they
+    # happen to have a linked Customer row and ensures role-based routing.
+    if is_admin(request.user):
+        customer = get_object_or_404(Customer, id=id)
+    elif request.user.role == "customer":
+        # Customers may only view their own customer record.
+        customer = get_object_or_404(Customer, user=request.user)
+        if customer.id != int(id):
+            raise PermissionDenied("You do not have permission to view this customer record.")
+    else:
+        raise PermissionDenied("You do not have permission to view customer records.")
 
 
 @admin_required
@@ -286,6 +303,12 @@ def walking_customer_add(request):
         WalkingCustomer.objects.create()
         messages.success(request, "Walking customer token created successfully.")
     return redirect("walking_customer_list")
+
+
+@admin_required
+def walking_customer_list(request):
+    walking_customers = WalkingCustomer.objects.all().order_by("-id")
+    return render(request, "walking_customer_list.html", {"walking_customers": walking_customers})
 
 
 @admin_required
@@ -373,15 +396,89 @@ def employee_update(request, employee_id):
                     password=form.cleaned_data["password"],
                     role="employee",
                 )
-            employee.first_name = form.cleaned_data["first_name"]
-            employee.last_name = form.cleaned_data["last_name"]
-            employee.position = form.cleaned_data["position"]
-            employee.join_date = form.cleaned_data["join_date"]
-            employee.base_salary = form.cleaned_data["salary"]
+            # Update only fields explicitly changed in the form to avoid
+            # unintentionally overwriting existing values (e.g. join_date).
+            if "first_name" in form.changed_data:
+                employee.first_name = form.cleaned_data["first_name"]
+            if "last_name" in form.changed_data:
+                employee.last_name = form.cleaned_data["last_name"]
+            if "position" in form.changed_data:
+                employee.position = form.cleaned_data["position"]
+            if "join_date" in form.changed_data and form.cleaned_data.get("join_date") is not None:
+                employee.join_date = form.cleaned_data["join_date"]
+            if "salary" in form.changed_data and form.cleaned_data.get("salary") is not None:
+                employee.base_salary = form.cleaned_data["salary"]
             employee.save()
         messages.success(request, "Employee account updated successfully.")
         return redirect("employee_list")
-    return render(request, "employee_form.html", {"form": form, "is_update": True})
+    return render(request, "employee_form.html", {"form": form, "is_update": True, "self_edit": False})
+
+
+@login_required
+def employee_self_update(request):
+    """Allow an authenticated employee to edit their own profile (restricted).
+
+    This view intentionally identifies the employee from the session and
+    ignores submitted salary/join_date values so employees cannot escalate
+    privileges by altering compensation or service dates.
+    """
+    if request.user.role != "employee":
+        raise PermissionDenied("Only employees may edit their own profile here.")
+
+    employee = get_object_or_404(Employee, user=request.user)
+    # Use a restricted self-edit form that only contains allowed fields.
+    form = EmployeeSelfForm(
+        request.POST or None,
+        account_user=employee.user,
+        initial={
+            "first_name": employee.first_name,
+            "last_name": employee.last_name,
+            "email": employee.user.email,
+        },
+    )
+
+    if request.method == "POST":
+        if form.is_valid():
+            with transaction.atomic():
+                # Update the linked user account — password will be preserved
+                # when left blank because AccountEmailMixin marks it optional
+                update_account_user(
+                    employee.user,
+                    email=form.cleaned_data["email"],
+                    password=form.cleaned_data.get("password", ""),
+                    first_name=form.cleaned_data["first_name"],
+                    last_name=form.cleaned_data["last_name"],
+                )
+
+                # Only update non-sensitive employee fields even if present.
+                # Position, join_date and base_salary are admin-controlled
+                # and must never be changed by an employee, even if submitted.
+                if "first_name" in form.changed_data:
+                    employee.first_name = form.cleaned_data["first_name"]
+                if "last_name" in form.changed_data:
+                    employee.last_name = form.cleaned_data["last_name"]
+
+                # Preserve join_date and base_salary regardless of submitted values
+
+                employee.save()
+
+                # Profile image and phone are stored on the User model. Only
+                # replace them when a new value/file is explicitly provided.
+                if request.FILES.get("profile_image"):
+                    employee.user.profile_image = request.FILES.get("profile_image")
+                # Phone may be updated from the POST; only accept the explicit value.
+                phone_val = request.POST.get("phone")
+                if phone_val is not None:
+                    employee.user.phone = phone_val
+                # Persist any changes to the linked user
+                employee.user.save()
+
+            messages.success(request, "Profile updated successfully.")
+            return redirect("profile")
+
+        # If invalid, fall through to render the form with errors visible.
+
+    return render(request, "employee_form.html", {"form": form, "is_update": True, "self_edit": True})
 
 @admin_required
 def employee_list(request):
@@ -683,10 +780,13 @@ def employee_detail(request, employee_id):
         return redirect("employee_detail", employee_id=employee.id)
 
     # ---------------- DATA ----------------
-    transactions = EmployeeTransaction.objects.filter(
+    transactions_qs = EmployeeTransaction.objects.filter(
         employee=employee,
         date__date__range=(salary_data["period_start"], salary_data["period_end"]),
     ).order_by("-date") if salary_data["period_start"] else EmployeeTransaction.objects.none()
+    # Paginate transaction history for the current salary period
+    tx_page = Paginator(transactions_qs, 10).get_page(request.GET.get("tx_page"))
+    transactions = tx_page
 
     # Compute cumulative earned and payments from employee.join_date up to today
     cumulative_earned, cum_start, cum_end = calculate_earned_salary(
@@ -945,24 +1045,131 @@ def employee_salary_statement(request, employee_id=None):
         else:
             month_end = month_start.replace(month=month_start.month + 1, day=1) - timedelta(days=1)
 
-    transactions = EmployeeTransaction.objects.filter(employee=employee, date__date__range=(month_start, month_end)).select_related("salary_record")
-    transactions = transactions.order_by("date", "id")
-    totals = transactions.aggregate(
+    transactions_qs = EmployeeTransaction.objects.filter(employee=employee, date__date__range=(month_start, month_end)).select_related("salary_record")
+    transactions_qs = transactions_qs.order_by("date", "id")
+    totals = transactions_qs.aggregate(
         taken=Sum("amount", filter=Q(transaction_type="taken")),
         deposited=Sum("amount", filter=Q(transaction_type="deposit")),
         salary_paid=Sum("amount", filter=Q(transaction_type="salary_payment")),
     )
+
+
+@login_required
+def my_transactions(request):
+    """Allow a logged-in employee to view their own transaction history (read-only, paginated)."""
+    if request.user.role == "employee":
+        employee = get_object_or_404(Employee, user=request.user)
+    else:
+        # Only employees may use this endpoint; admins continue to use admin views.
+        raise PermissionDenied("Only employees may view this page.")
+
+    qs = EmployeeTransaction.objects.filter(employee=employee).order_by("-date")
+    page = Paginator(qs, 10).get_page(request.GET.get("page"))
+
+    return render(request, "employee_transactions.html", {
+        "employee": employee,
+        "transactions": page,
+    })
+    # Paginate historical transactions for the selected month
+    trans_page = Paginator(transactions_qs, 10).get_page(request.GET.get("page"))
+    # Compute monthly summary for remaining / advance display
+    monthly = monthly_salary_summary(employee, month_start)
     return render(
         request,
         "salary_statement.html",
         {
             "employee": employee,
-            "transactions": transactions,
+            "transactions": trans_page,
             "month": month_start,
             "taken": totals["taken"] or 0,
             "deposited": totals["deposited"] or 0,
             "salary_paid": totals["salary_paid"] or 0,
             "month_label": month_start.strftime("%B %Y"),
+            "monthly_summary": monthly,
         },
     )
+
+
+@login_required
+def employee_transactions_print(request, employee_id):
+    # Print a compact receipt for the current salary period transactions (current page only)
+    if is_admin(request.user):
+        employee = get_object_or_404(Employee, pk=employee_id)
+    elif request.user.role == "employee":
+        employee = get_object_or_404(Employee, user=request.user)
+    else:
+        raise PermissionDenied("You do not have permission to print transactions.")
+
+    salary_data = current_month_salary(employee)
+    if not salary_data["period_start"]:
+        items = []
+        page = None
+    else:
+        qs = EmployeeTransaction.objects.filter(
+            employee=employee,
+            date__date__range=(salary_data["period_start"], salary_data["period_end"]),
+        ).order_by("-date")
+        page = Paginator(qs, 10).get_page(request.GET.get("tx_page"))
+        items = page.object_list
+
+    summary = {
+        "total_salary": salary_data.get("earned_salary"),
+        "cash_taken": salary_data.get("cash_taken"),
+        "remaining_salary": salary_data.get("remaining_salary"),
+        "advance": salary_data.get("cash_taken"),
+    }
+
+    return render(request, "print_receipt.html", {
+        "title": "Transaction Receipt",
+        "employee": f"{employee.first_name} {employee.last_name}",
+        "items": items,
+        "month_label": salary_data.get("month_start").strftime("%B %Y") if salary_data.get("month_start") else None,
+        "summary": summary,
+    })
+
+
+@login_required
+def employee_salary_print(request, employee_id):
+    # Print a compact receipt for a selected historical month (page only)
+    if is_admin(request.user):
+        employee = get_object_or_404(Employee, pk=employee_id)
+    elif request.user.role == "employee":
+        employee = get_object_or_404(Employee, user=request.user)
+    else:
+        raise PermissionDenied("You do not have permission to print salary statements.")
+
+    month_value = request.GET.get("month")
+    month = parse_date(month_value) if month_value else localdate().replace(day=1)
+    if month:
+        month_start = month.replace(day=1)
+        if month_start.month == 12:
+            month_end = month_start.replace(year=month_start.year + 1, month=1, day=1) - timedelta(days=1)
+        else:
+            month_end = month_start.replace(month=month_start.month + 1, day=1) - timedelta(days=1)
+    else:
+        month_start = localdate().replace(day=1)
+        if month_start.month == 12:
+            month_end = month_start.replace(year=month_start.year + 1, month=1, day=1) - timedelta(days=1)
+        else:
+            month_end = month_start.replace(month=month_start.month + 1, day=1) - timedelta(days=1)
+
+    qs = EmployeeTransaction.objects.filter(employee=employee, date__date__range=(month_start, month_end)).order_by("date", "id")
+    page = Paginator(qs, 10).get_page(request.GET.get("page"))
+    items = page.object_list
+    monthly = monthly_salary_summary(employee, month_start)
+
+    summary = {
+        "total_salary": monthly.get("earned_salary"),
+        "cash_taken": monthly.get("cash_taken"),
+        "remaining_salary": monthly.get("remaining_salary"),
+        "advance": monthly.get("cash_taken"),
+    }
+
+    return render(request, "print_receipt.html", {
+        "title": "Salary Receipt",
+        "employee": f"{employee.first_name} {employee.last_name}",
+        "items": items,
+        "month_label": month_start.strftime("%B %Y"),
+        "summary": summary,
+    })
 

@@ -98,7 +98,13 @@
           <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
           Employees
         </a>{% endif %}
-        {% if request.user.role == 'employee' %}<a href="{% url 'profile' %}" class="nav-link flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-400 transition hover:bg-slate-900 hover:text-white">My Profile</a><a href="{% url 'employee_detail' request.user.employee_profile.id %}" class="nav-link flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-400 transition hover:bg-slate-900 hover:text-white">My Salary</a>{% elif request.user.role == 'customer' %}<a href="{% url 'profile' %}" class="nav-link flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-400 transition hover:bg-slate-900 hover:text-white">My Profile</a>{% endif %}
+        {% if request.user.role == 'employee' %}
+          <a href="{% url 'profile' %}" class="nav-link flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-400 transition hover:bg-slate-900 hover:text-white">My Profile</a>
+          <a href="{% url 'employee_detail' request.user.employee_profile.id %}" class="nav-link flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-400 transition hover:bg-slate-900 hover:text-white">My Salary</a>
+          <a href="{% url 'my_transactions' %}" class="nav-link flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-400 transition hover:bg-slate-900 hover:text-white">Transaction History</a>
+        {% elif request.user.role == 'customer' %}
+          <a href="{% url 'profile' %}" class="nav-link flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-400 transition hover:bg-slate-900 hover:text-white">My Profile</a>
+        {% endif %}
       </div>
 
       {% if request.user.role == 'admin' or request.user.is_superuser %}<p class="mb-2 mt-7 px-3 text-[10px] font-bold uppercase tracking-[.2em] text-slate-600">Management</p>
